@@ -1,0 +1,10 @@
+# Dependências e artefatos temporários; não versionar binários baixados nem logs.
+node_modules/
+dist/
+.angular/
+reports/
+.test-build/
+local-packages/*.tgz
+local-packages/*.tar.gz
+local-packages/*.tar
+*.log

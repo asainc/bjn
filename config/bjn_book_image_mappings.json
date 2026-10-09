@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "source": "book_clausulas.zip",
+  "rules": [
+    {
+      "question_id": "personal_data",
+      "value": "sim",
+      "clause_id": "LGPD_COM_DADOS_PESSOAIS",
+      "title": "DA PROTEÇÃO DE DADOS — ANEXO V (LGPD)",
+      "book_pages": [
+        {
+          "page": 3,
+          "file": "lgpd_01.jpeg",
+          "original": "WhatsApp Image 2026-10-08 at 15.03.57.jpeg",
+          "sha256": "4fd35523c1b02884993223e343386fe27f6f166882a25888ec527870383ae7cb"
+        },
+        {
+          "page": 4,
+          "file": "lgpd_02.jpeg",
+          "original": "WhatsApp Image 2026-10-08 at 15.03.57 (1).jpeg",
+          "sha256": "05adda0514df84c7f17170ee62ce4ec3ae9cbf73657243b6bcf88125a051a6f5"
+        },
+        {
+          "page": 5,
+          "file": "lgpd_03.jpeg",
+          "original": "WhatsApp Image 2026-10-08 at 15.03.57 (2).jpeg",
+          "sha256": "72979c08b09bd33bc0a715477f016af7621d75bb8f43a577b78af98c7c49061d"
+        },
+        {
+          "page": 6,
+          "file": "lgpd_04.jpeg",
+          "original": "WhatsApp Image 2026-10-08 at 15.03.57 (3).jpeg",
+          "sha256": "4603859652e1eb0e842b457ca79afe5b975d1c60d30b02fd349404392be3e5f4"
+        },
+        {
+          "page": 7,
+          "file": "lgpd_05.jpeg",
+          "original": "WhatsApp Image 2026-10-08 at 15.03.57 (4).jpeg",
+          "sha256": "f50324544b416bcdd1cc6a10fc8ed927ee22facffe61038c758d98cc373329ad"
+        },
+        {
+          "page": 8,
+          "file": "lgpd_06.jpeg",
+          "original": "WhatsApp Image 2026-10-08 at 15.03.57 (5).jpeg",
+          "sha256": "e630b5bbda98a857eff2819128690490af5d2ccf95c9135b5e5b2ac683788996"
+        }
+      ],
+      "note": "Vínculo preliminar com os três primeiros trechos do Anexo V identificados no catálogo OCR. Demais páginas e redação requerem validação jurídica.",
+      "catalog_ids": [
+        "BOOK-P02-T004",
+        "BOOK-P02-T005",
+        "BOOK-P02-T006"
+      ]
+    }
+  ]
+}

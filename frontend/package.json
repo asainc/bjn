@@ -1,0 +1,52 @@
+{
+  "name": "ai-ready-legal-angular",
+  "version": "3.1.0",
+  "private": true,
+  "packageManager": "npm@10.9.0",
+  "scripts": {
+    "start": "ng serve --host 127.0.0.1 --port 4200",
+    "env:check": "node scripts/validate-environment.mjs",
+    "nexus:check": "node scripts/validate-nexus-registry.mjs",
+    "nexus:lock": "node scripts/nexus-bootstrap.mjs --lock-only",
+    "nexus:preflight": "node scripts/nexus-preflight.mjs --artifacts",
+    "prebuild": "node scripts/validate-angular.mjs",
+    "build": "ng build --configuration production",
+    "test": "node --test tests/*.test.cjs",
+    "verify:lock": "node scripts/validate-dependency-lock.mjs",
+    "governance:check": "node scripts/governance-check.mjs",
+    "install:corporate": "node scripts/nexus-bootstrap.mjs --install",
+    "local:check": "node scripts/local-tarballs.mjs --check",
+    "local:cache": "node scripts/local-tarballs.mjs --cache",
+    "local:install": "node scripts/local-install.mjs",
+    "native:check": "node scripts/validate-native-rollup.mjs",
+    "nexus:diagnose": "node scripts/diagnose-registry.mjs"
+  },
+  "dependencies": {
+    "@angular/common": "21.2.19",
+    "@angular/compiler": "21.2.19",
+    "@angular/core": "21.2.19",
+    "@angular/forms": "21.2.19",
+    "@angular/platform-browser": "21.2.19",
+    "@angular/router": "21.2.19",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "21.2.19",
+    "@angular/cli": "21.2.19",
+    "@angular/compiler-cli": "21.2.19",
+    "typescript": "5.9.3",
+    "@rollup/rollup-win32-x64-msvc": "4.60.1"
+  },
+  "engines": {
+    "node": "22.12.x",
+    "npm": "10.9.x"
+  },
+  "overrides": {
+    "rollup": "4.60.1",
+    "chokidar": {
+      "readdirp": "4.1.2"
+    },
+    "postcss": "8.5.25"
+  }
+}

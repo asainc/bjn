@@ -1,0 +1,17 @@
+{
+  "backend": {
+    "host": "127.0.0.1",
+    "port": 8000,
+    "workers": 1,
+    "access_log": false
+  },
+  "frontend": {
+    "host": "127.0.0.1",
+    "port": 4200
+  },
+  "reload": {
+    "directories": ["backend", "config", "prompts"],
+    "include_patterns": ["*.py", "*.json", "*.md"],
+    "exclude_paths": ["frontend", "frontend/node_modules", ".venv", ".git", "docs", "tests"]
+  }
+}

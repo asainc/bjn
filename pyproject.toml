@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=75,<82", "wheel>=0.45,<1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-ready-legal"
+version = "3.1.0"
+description = "AI Ready para análise de documentos de processos cíveis com FastAPI, Angular e gpt_bradesco.text_generator."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "requests>=2.32.5,<3",
+    "pydantic>=2.13.0,<3",
+    "fastapi>=0.121.2,<1",
+    "uvicorn>=0.38.0,<1",
+    "python-multipart>=0.0.18,<1",
+    "pymupdf>=1.26.0,<2",
+    "reportlab>=4.2,<5",
+    "charset-normalizer>=2,<4",
+]
+
+[tool.setuptools]
+py-modules = ["gpt_bradesco"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra"

@@ -1,0 +1,1000 @@
+{
+  "source": "script_bjn.zip",
+  "source_pages": 8,
+  "version": "transcricao_visual_pendente_homologacao",
+  "questions": [
+    {
+      "id": "instrument",
+      "label": "O que você precisa?",
+      "type": "choice",
+      "source_page": 1,
+      "options": [
+        {
+          "value": "Contrato de prestação de serviços pura",
+          "label": "Contrato de prestação de serviços pura"
+        },
+        {
+          "value": "Contrato de prestação de serviços com aquisição de produto/equipamento",
+          "label": "Contrato de prestação de serviços com aquisição de produto/equipamento"
+        },
+        {
+          "value": "Contrato para aquisição de produto/equipamento pura",
+          "label": "Contrato para aquisição de produto/equipamento pura"
+        },
+        {
+          "value": "Contrato de Tecnologia",
+          "label": "Contrato de Tecnologia"
+        },
+        {
+          "value": "Termo de Confidencialidade (NDA)",
+          "label": "Termo de Confidencialidade (NDA)"
+        },
+        {
+          "value": "Distrato",
+          "label": "Distrato"
+        },
+        {
+          "value": "Termo de encerramento de contrato e quitação com obrigações pendentes",
+          "label": "Termo de encerramento de contrato e quitação com obrigações pendentes"
+        },
+        {
+          "value": "Termo de encerramento de contrato e quitação sem obrigações pendentes",
+          "label": "Termo de encerramento de contrato e quitação sem obrigações pendentes"
+        },
+        {
+          "value": "Notificação",
+          "label": "Notificação"
+        },
+        {
+          "value": "Outros, especificar",
+          "label": "Outros, especificar"
+        }
+      ],
+      "action": {
+        "value": "Outros, especificar",
+        "result": "human"
+      }
+    },
+    {
+      "id": "instrument_other",
+      "label": "Outros, especificar",
+      "type": "text",
+      "source_page": 1,
+      "when": {
+        "instrument": "Outros, especificar"
+      }
+    },
+    {
+      "id": "contracting_party",
+      "label": "Contratantes",
+      "type": "multi",
+      "source_page": 1,
+      "options": [
+        {
+          "value": "banco",
+          "label": "Banco Bradesco S.A."
+        },
+        {
+          "value": "grupo",
+          "label": "Outras empresas do grupo econômico do Bradesco"
+        }
+      ]
+    },
+    {
+      "id": "supplier_name",
+      "label": "Nome da empresa",
+      "type": "text",
+      "source_page": 1
+    },
+    {
+      "id": "supplier_address",
+      "label": "Endereço",
+      "type": "text",
+      "source_page": 1
+    },
+    {
+      "id": "supplier_district",
+      "label": "Bairro",
+      "type": "text",
+      "source_page": 1
+    },
+    {
+      "id": "supplier_city_state",
+      "label": "Cidade/Estado",
+      "type": "text",
+      "source_page": 1
+    },
+    {
+      "id": "supplier_cep",
+      "label": "CEP",
+      "type": "text",
+      "source_page": 1
+    },
+    {
+      "id": "supplier_cnpj",
+      "label": "CNPJ",
+      "type": "text",
+      "source_page": 1
+    },
+    {
+      "id": "personal_data",
+      "label": "3.1 LGPD – dados pessoais de terceiros ou clientes",
+      "type": "choice",
+      "source_page": 1,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "international_transfer",
+      "label": "3.1.1 Transferência Internacional de Dados",
+      "type": "choice",
+      "source_page": 1,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "financial_data",
+      "label": "3.2 LC 105 – dados financeiros de terceiros ou clientes",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "confidential",
+      "label": "3.3 Informações confidenciais do Banco e/ou de terceiros",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "fine",
+      "label": "3.4 Multa – penalidade por descumprimento de deveres previstos no contrato (inadimplemento contratual)",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "padrao",
+          "label": "Padrão – 10% sobre o valor total do contrato"
+        },
+        {
+          "value": "fora_padrao",
+          "label": "Fora do padrão"
+        }
+      ]
+    },
+    {
+      "id": "fine_type",
+      "label": "Condição de multa fora do padrão",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "outro_valor",
+          "label": "Outro valor negociado"
+        },
+        {
+          "value": "fornecedor",
+          "label": "Condições previstas em instrumento padrão do fornecedor"
+        }
+      ],
+      "when": {
+        "fine": "fora_padrao"
+      }
+    },
+    {
+      "id": "fine_detail",
+      "label": "Informar condição de multa",
+      "type": "text",
+      "source_page": 2,
+      "when": {
+        "fine": "fora_padrao"
+      }
+    },
+    {
+      "id": "fine_approved",
+      "label": "A condição de multa fora do padrão foi previamente aprovada pela alçada competente?",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "fine": "fora_padrao"
+      },
+      "action": {
+        "value": "nao",
+        "result": "blocked"
+      }
+    },
+    {
+      "id": "civil_liability",
+      "label": "3.5 Responsabilidade Civil – indenização",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "padrao",
+          "label": "Padrão – responsabilidade sobre toda e qualquer perda e/ou dano"
+        },
+        {
+          "value": "limitacao",
+          "label": "Com limitação"
+        }
+      ],
+      "action": {
+        "value": "limitacao",
+        "result": "human"
+      }
+    },
+    {
+      "id": "employees",
+      "label": "A Contratada possui quadro de funcionários/empregados?",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "clt",
+      "label": "São funcionários no regime CLT?",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "employees": "sim"
+      }
+    },
+    {
+      "id": "subcontract",
+      "label": "Haverá subcontratação para consecução do objeto?",
+      "type": "choice",
+      "source_page": 2,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "on_site",
+      "label": "3.6.1 O serviço será prestado nas dependências do Banco com cessão de mão de obra?",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "bank_equipment",
+      "label": "3.6.2 Serviço será prestado com uso de equipamento do Banco (empréstimo de equipamento)?",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "team_type",
+      "label": "3.6.3 Serviço contratado será prestado:",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "exclusiva",
+          "label": "Por equipe exclusiva que atenderá apenas ao Banco"
+        },
+        {
+          "value": "mercado",
+          "label": "Por equipe que atende ao mercado em geral e, também, atenderá ao Banco"
+        }
+      ]
+    },
+    {
+      "id": "clt_count",
+      "label": "3.6.4 Qual a quantidade de funcionários CLT?",
+      "type": "number",
+      "source_page": 3
+    },
+    {
+      "id": "social_capital",
+      "label": "Qual o capital social?",
+      "type": "text",
+      "source_page": 3
+    },
+    {
+      "id": "cloud_service",
+      "label": "3.7 Nuvem",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    {
+      "id": "import",
+      "label": "4.1 Importação",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de prestação de serviços com aquisição de produto/equipamento"
+      }
+    },
+    {
+      "id": "customs",
+      "label": "4.1.1 Desembaraço aduaneiro",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "banco",
+          "label": "Banco Bradesco"
+        },
+        {
+          "value": "fornecedor",
+          "label": "Fornecedor"
+        },
+        {
+          "value": "na",
+          "label": "n/a"
+        }
+      ],
+      "when": {
+        "import": "sim"
+      }
+    },
+    {
+      "id": "supplier_logistics",
+      "label": "4.2 Logística de entrega de responsabilidade do fornecedor",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de prestação de serviços com aquisição de produto/equipamento"
+      }
+    },
+    {
+      "id": "insurance",
+      "label": "4.3 Seguro",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de prestação de serviços com aquisição de produto/equipamento"
+      }
+    },
+    {
+      "id": "insurance_by",
+      "label": "4.3.1 Se sim para Seguro, será contratado por:",
+      "type": "choice",
+      "source_page": 3,
+      "options": [
+        {
+          "value": "banco",
+          "label": "Banco Bradesco S.A."
+        },
+        {
+          "value": "fornecedor",
+          "label": "Fornecedor"
+        }
+      ],
+      "when": {
+        "insurance": "sim"
+      }
+    },
+    {
+      "id": "insurance_policy",
+      "label": "4.3.1.2 Apólice / Seguradora",
+      "type": "text",
+      "source_page": 3,
+      "when": {
+        "insurance_by": "fornecedor"
+      }
+    },
+    {
+      "id": "insurance_global",
+      "label": "Seguro global e geral para todos os clientes",
+      "type": "boolean",
+      "source_page": 4,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "insurance": "sim"
+      }
+    },
+    {
+      "id": "warranty",
+      "label": "4.4 Garantia",
+      "type": "choice",
+      "source_page": 4,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de prestação de serviços com aquisição de produto/equipamento"
+      }
+    },
+    {
+      "id": "warranty_period",
+      "label": "4.4 Período",
+      "type": "text",
+      "source_page": 4,
+      "when": {
+        "warranty": "sim"
+      }
+    },
+    {
+      "id": "customization",
+      "label": "4.5 Customização de Componente ou Software",
+      "type": "choice",
+      "source_page": 4,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de prestação de serviços com aquisição de produto/equipamento"
+      }
+    },
+    {
+      "id": "intellectual_property",
+      "label": "4.5.1 Propriedade Intelectual sobre o item customizado",
+      "type": "choice",
+      "source_page": 4,
+      "options": [
+        {
+          "value": "banco",
+          "label": "Banco Bradesco"
+        },
+        {
+          "value": "fornecedor",
+          "label": "Fornecedor"
+        }
+      ],
+      "when": {
+        "customization": "sim"
+      }
+    },
+    {
+      "id": "technology_mode",
+      "label": "Qual a modalidade da contratação?",
+      "type": "multi",
+      "source_page": 4,
+      "options": [
+        {
+          "value": "Licenciamento de Software",
+          "label": "Licenciamento de Software"
+        },
+        {
+          "value": "SaaS (Software as a Service)",
+          "label": "SaaS (Software as a Service)"
+        },
+        {
+          "value": "PaaS (Plataforma as a Service)",
+          "label": "PaaS (Plataforma as a Service)"
+        },
+        {
+          "value": "IaaS (Infrastructure as a Service)",
+          "label": "IaaS (Infrastructure as a Service)"
+        },
+        {
+          "value": "Licenciamento de Software com prestação de serviços",
+          "label": "Licenciamento de Software com prestação de serviços"
+        },
+        {
+          "value": "Outro especificar",
+          "label": "Outro especificar"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "technology_other",
+      "label": "Outro, especificar",
+      "type": "text",
+      "source_page": 4,
+      "when": {
+        "technology_mode": "Outro especificar"
+      }
+    },
+    {
+      "id": "software_functionality",
+      "label": "II – Descrição da funcionalidade do software",
+      "type": "text",
+      "source_page": 5,
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "modules",
+      "label": "III – Descrição dos módulos",
+      "type": "text",
+      "source_page": 5,
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "license_type",
+      "label": "IV – Tipo de licença",
+      "type": "choice",
+      "source_page": 5,
+      "options": [
+        {
+          "value": "prazo",
+          "label": "Prazo determinado"
+        },
+        {
+          "value": "indeterminado",
+          "label": "Tempo indeterminado ou vigência do Contrato"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "territory",
+      "label": "Abrangência legal e territorial",
+      "type": "multi",
+      "source_page": 5,
+      "options": [
+        {
+          "value": "Brasil",
+          "label": "Brasil"
+        },
+        {
+          "value": "Não exclusiva",
+          "label": "Não exclusiva"
+        },
+        {
+          "value": "Global",
+          "label": "Global"
+        },
+        {
+          "value": "Restrita ao território",
+          "label": "Restrita ao território"
+        },
+        {
+          "value": "Limitada quantidade",
+          "label": "Limitada quantidade"
+        },
+        {
+          "value": "Ilimitada",
+          "label": "Ilimitada"
+        },
+        {
+          "value": "Transferível",
+          "label": "Transferível"
+        },
+        {
+          "value": "Intransferível, exceto em relação às empresas do Conglomerado Econômico",
+          "label": "Intransferível, exceto em relação às empresas do Conglomerado Econômico"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "software_development",
+      "label": "V – Haverá prestação de serviços de: Desenvolvimento de Software",
+      "type": "choice",
+      "source_page": 6,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "sharing",
+      "label": "IX – Há o compartilhamento e/ou acesso à informação e/ou dados confidencial do Bradesco e/ou de terceiros?",
+      "type": "choice",
+      "source_page": 6,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "external_encryption",
+      "label": "X – Na hipótese de disponibilização de informações em ambiente externo, haverá criptografia/mascaramento e/ou codificação que inviabilize a decodificação por terceiros?",
+      "type": "choice",
+      "source_page": 6,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "cloud_storage",
+      "label": "XI – Haverá utilização de nuvem (cloud computing) para armazenamento de dados pertinentes ao objeto do contrato e informações relacionadas?",
+      "type": "choice",
+      "source_page": 6,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "sharing_details",
+      "label": "IX.I – Caso a resposta tenha sido Sim, especificar o tipo de dado e/ou informação compartilhados",
+      "type": "text",
+      "source_page": 6,
+      "when": {
+        "sharing": "sim"
+      }
+    },
+    {
+      "id": "cloud_servers",
+      "label": "XI.II – Localização dos servidores (país/região territorial)",
+      "type": "text",
+      "source_page": 6,
+      "when": {
+        "cloud_storage": "sim"
+      }
+    },
+    {
+      "id": "cloud_type",
+      "label": "XI.III – Qual o tipo de nuvem?",
+      "type": "choice",
+      "source_page": 7,
+      "options": [
+        {
+          "value": "publica",
+          "label": "Pública"
+        },
+        {
+          "value": "privada",
+          "label": "Privada"
+        },
+        {
+          "value": "hibrida",
+          "label": "Híbrida"
+        },
+        {
+          "value": "outra",
+          "label": "Outra, especificar"
+        }
+      ],
+      "when": {
+        "cloud_storage": "sim"
+      }
+    },
+    {
+      "id": "cloud_type_other",
+      "label": "Outra, especificar",
+      "type": "text",
+      "source_page": 7,
+      "when": {
+        "cloud_type": "outra"
+      }
+    },
+    {
+      "id": "fan",
+      "label": "XI.III – Houve parecer do FAN (Formulário de Adoção de Nuvem)?",
+      "type": "choice",
+      "source_page": 7,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "cloud_storage": "sim"
+      }
+    },
+    {
+      "id": "license_installation",
+      "label": "XII – Qual o local da instalação das licenças?",
+      "type": "text",
+      "source_page": 7,
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "license_not_applicable",
+      "label": "Não aplicável",
+      "type": "boolean",
+      "source_page": 7,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "relevant_service",
+      "label": "XIII – A contratação foi enquadrada como “serviço relevante” nos termos do normativo interno n.º 05.1144?",
+      "type": "choice",
+      "source_page": 7,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "business_continuity",
+      "label": "XIV – Há PCN – Plano de Continuidade de Negócios?",
+      "type": "choice",
+      "source_page": 7,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "duration_months",
+      "label": "XV – Qual será o prazo de vigência da contratação? (meses)",
+      "type": "number",
+      "source_page": 7,
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "termination",
+      "label": "XVI – Há necessidade de inserir condições específicas para o rompimento do contrato?",
+      "type": "choice",
+      "source_page": 7,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "termination_details",
+      "label": "XVI.I – Caso a resposta tenha sido Sim, especificar as condições específicas de rompimento",
+      "type": "text",
+      "source_page": 8,
+      "when": {
+        "termination": "sim"
+      }
+    },
+    {
+      "id": "transition_over_30",
+      "label": "XVII – Há necessidade de um prazo superior a 30 dias para realizar a troca de fornecedor e a desmobilização de equipe?",
+      "type": "choice",
+      "source_page": 8,
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ],
+      "when": {
+        "instrument": "Contrato de Tecnologia"
+      }
+    },
+    {
+      "id": "transition_days",
+      "label": "XVII.I – Caso a resposta tenha sido Sim, especificar o respectivo prazo",
+      "type": "text",
+      "source_page": 8,
+      "when": {
+        "transition_over_30": "sim"
+      }
+    }
+  ],
+  "human_channel": "CopecJuri",
+  "notes": [
+    "As demais regras do script devem ser homologadas antes da liberação da emissão PDF.",
+    "Não utilizar a LLM para inventar seleção de cláusulas."
+  ]
+}

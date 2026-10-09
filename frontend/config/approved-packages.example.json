@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "packages": [
+    {
+      "name": "@angular/core",
+      "version": "21.2.19",
+      "integrity": "sha512-PREENCHER_COM_HASH_DO_LOCKFILE_CORPORATIVO",
+      "status": "approved"
+    }
+  ]
+}

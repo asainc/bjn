@@ -1,0 +1,22 @@
+{
+  "environment": "local",
+  "cors_origins": [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200"
+  ],
+  "max_upload_bytes": 26214400,
+  "max_upload_files": 12,
+  "max_pdf_pages": 2500,
+  "workspace_ttl_minutes": 120,
+  "max_workspaces_in_memory": 30,
+  "bradesco_environment": "dev",
+  "bradesco_text_model": "",
+  "bradesco_text_temperature": 0.2,
+  "bradesco_text_max_tokens": 12000,
+  "bradesco_prompt_max_chars": 52000,
+  "bradesco_analysis_max_tokens": 9000,
+  "max_total_upload_bytes": 83886080,
+  "max_analysis_chunks": 24,
+  "bradesco_qa_url": "",
+  "bradesco_qa_workflow_code": "CD_WRFL_QA_778_LEITURA_SENTENCA_PIAUI_AAJR_SYNC"
+}
