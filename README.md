@@ -249,3 +249,18 @@ A aplicação espera que a função retorne um dicionário contendo `answer`. O 
 ## BJN — Minutas contratuais
 
 Acesse `/bjn` para a jornada BJN. A nova área usa o shell existente, um motor de triagem independente e um chatbot próprio. **A geração de minutas está bloqueada** até que as cláusulas fotografadas sejam transcritas, conferidas e aprovadas pelo Jurídico. Consulte [docs/BJN.md](docs/BJN.md) para a arquitetura, as regras, as limitações e os passos de homologação.
+
+## Cadastro e acompanhamento de demandas BJN
+
+Na aplicação BJN também estão disponíveis **Demandas**, **Nova demanda** e **Acompanhamento da demanda**. O cadastro recebe anexos; a página de acompanhamento mostra responsável, histórico, status e documentos em visualizador PDF/imagem embutido. A distribuição para advogado é manual, por administrador, usando lista autorizada.
+
+Consulte [docs/BJN_DEMANDAS.md](docs/BJN_DEMANDAS.md) para arquitetura, rotas, permissões, limites e instalação. O questionário original de minutas e o chatbot não foram substituídos.
+
+## BJN — Orientação inicial com IA e distribuição de teste
+
+O BJN inclui análise opcional do campo **Descrição da consulta** com `gpt_bradesco.text_generator`, exibição de uma sugestão informacional antes do cadastro e no acompanhamento, resolução explícita por autoatendimento e uma Central de Documentos minimizável. Os quatro advogados fictícios do ambiente local podem ser usados para testar a distribuição, sem afetar produção. Consulte `docs/BJN_IA_ORIENTACAO_E_DISTRIBUICAO.md` para configuração, controles, API e testes. O serviço de IA depende de `BRADESCO_TEXT_MODEL` válido no ambiente corporativo.
+
+
+### Gestão de demandas BJN — jornada integrada
+
+Consulte `docs/BJN_JORNADA_DEMANDAS_2026_10_14.md` para o novo fluxo de triagem, cadastro, distribuição, geração assistida e revisão de parecer, consulta, privacidade e configuração de notificações.

@@ -10,5 +10,8 @@ def test_settings_are_limited_to_document_and_ai_runtime() -> None:
         "bradesco_text_url", "bradesco_identity_url", "bradesco_timeout_seconds", "bradesco_text_model",
         "bradesco_text_temperature", "bradesco_text_max_tokens", "bradesco_prompt_max_chars",
         "bradesco_analysis_max_tokens", "max_analysis_chunks", "bradesco_qa_url", "bradesco_qa_workflow_code", "gateway_token",
+        "bjn_database_path", "bjn_upload_directory", "bjn_allowed_lawyers", "bjn_demo_lawyers_enabled",
+        "bjn_document_hash_key", "bjn_notification_smtp_host", "bjn_notification_smtp_port",
+        "bjn_notification_sender", "bjn_notification_username", "bjn_notification_password",
     }
     assert fields == expected

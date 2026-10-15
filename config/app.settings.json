@@ -18,5 +18,6 @@
   "max_total_upload_bytes": 83886080,
   "max_analysis_chunks": 24,
   "bradesco_qa_url": "",
-  "bradesco_qa_workflow_code": "CD_WRFL_QA_778_LEITURA_SENTENCA_PIAUI_AAJR_SYNC"
+  "bradesco_qa_workflow_code": "CD_WRFL_QA_778_LEITURA_SENTENCA_PIAUI_AAJR_SYNC",
+  "bjn_demo_lawyers_enabled": true
 }

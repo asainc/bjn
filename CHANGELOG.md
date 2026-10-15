@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-14 — Correção do cadastro de demandas BJN
+
+- Corrigida a desabilitação silenciosa do botão **Cadastrar demanda**: o envio passa a bloquear o botão apenas enquanto há requisição em andamento.
+- A revisão lateral indica os campos faltantes e permite navegar diretamente até eles.
+- Removido o impedimento causado por linhas opcionais de envolvidos adicionadas e deixadas em branco; somente linhas com informações são transmitidas à API.
+- Mantidas as validações contratuais de comprimento mínimo dos campos obrigatórios; envolvidos parcialmente preenchidos precisam de nome válido.
+- A API retorna os nomes dos campos inválidos sem repetir as informações preenchidas.
+- Falhas de sessão, rede, acesso e formato de anexos geram mensagens distintas, preservando os dados do formulário.
+- Regressão verificada com testes sintéticos de backend e frontend, sem alterar minutas, regras BJN ou chatbot.
+
+
 ## 3.0.3 - 2026-10-01
 
 - Corrigido o posicionamento do balão do chatbot para respeitar a largura da barra lateral e permanecer no canto inferior esquerdo da área útil do AI Ready.
@@ -51,3 +62,27 @@
 - O chat foi desacoplado do workspace de PDFs e pode ser usado sem executar a análise documental.
 - `BRADESCO_QA_WORKFLOW_CODE` e `BRADESCO_QA_URL` foram parametrizados.
 - O endpoint fornecido foi tratado como confirmado apenas em DEV; homol/prod exigem URL explicitamente validada.
+
+## 2026-10-14 — BJN: gestão de demandas
+
+- Novas telas Angular `/bjn/demandas`, `/bjn/demandas/nova` e `/bjn/demandas/:id`, preservando `/bjn` e `/ai-ready`.
+- Cadastro com campos e envolvidos, anexos PDF/PNG/JPEG, visualização embutida, histórico e status.
+- Persistência SQLite para ambiente local/instância única, armazenamento privado por UUID, hash SHA-256, validação de arquivos e autorização por identidade autenticada.
+- Distribuição manual exclusiva de administrador a advogados permitidos, sem direcionamento automático fictício.
+- Novos testes sintéticos e documentação da implantação. Antes de produção, requer homologação de gateway, dados, armazenamento, backup e antivírus.
+
+## 2026-10-14 — BJN: orientação pré-cadastro, distribuição fictícia e documentos recolhíveis
+- Inclusão de análise sob demanda via `text_generator`, system prompt versionado e contrato de saída validado.
+- Recomendação de autoatendimento sem criação automática de demanda, e confirmação explícita no acompanhamento.
+- Adição de quatro advogados sintéticos para testes locais, com restrição para ambientes não locais.
+- Central de Documentos pode ser minimizada e expandida; preservação da visualização protegida.
+- Nova tabela de sugestões, histórico auditável e testes de segurança e autorização.
+
+## 2026-10-14 — Jornada BJN de demandas
+- Triagem guiada em cinco categorias e token temporário por usuário.
+- Cadastro com cinco naturezas e validação de documentos obrigatórios.
+- Triagem administrativa de pareceres gerais e encaminhamento não automático.
+- Parecer por text_generator como rascunho sujeito a revisão do advogado designado.
+- Consulta com filtros e CPF protegido por HMAC, com busca via POST.
+- Notificações após publicação, com fila local de pendências se SMTP não configurado.
+- Testes e documentação em `docs/BJN_JORNADA_DEMANDAS_2026_10_14.md`.

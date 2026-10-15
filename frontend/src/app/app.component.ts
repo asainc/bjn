@@ -74,6 +74,13 @@ type ApplicationDescriptor = {
               </span>
             </a>
 
+            @if (activeApplication().key === 'bjn') {
+              <nav aria-label="Navegação BJN" class="top-level-nav top-level-nav--bjn">
+                <a routerLink="/bjn" routerLinkActive="context-active" [routerLinkActiveOptions]="{exact:true}">Minutas</a>
+                <a routerLink="/bjn/demandas" routerLinkActive="context-active" [routerLinkActiveOptions]="{exact:false}">Demandas</a>
+                <a routerLink="/bjn/demandas/nova" class="top-new-demand">+ Nova demanda</a>
+              </nav>
+            }
             @if (activeApplication().key === 'ai-ready') {
               <nav aria-label="Contexto da aplicação" class="top-level-nav top-level-nav--context">
                 <span>Visão do processo</span>
@@ -100,11 +107,11 @@ export class AppComponent {
   readonly currentUrl = signal(this.router.url);
   readonly applications: ApplicationDescriptor[] = [
     {key: 'ai-ready', label: 'AI Ready', subtitle: 'Inteligência processual', route: '/ai-ready', badge: 'AI'},
-    {key: 'bjn', label: 'BJN', subtitle: 'Minutas contratuais', route: '/bjn', badge: 'BJ'},
+    {key: 'bjn', label: 'BJN', subtitle: 'Minutas e demandas', route: '/bjn', badge: 'BJ'},
   ];
 
   readonly activeApplication = computed(() => this.currentUrl().startsWith('/bjn') ? this.applications[1] : this.applications[0]);
-  readonly headerContext = computed(() => this.activeApplication().key === 'ai-ready' ? 'Processos cíveis' : 'Contratos e minutas');
+  readonly headerContext = computed(() => this.activeApplication().key === 'ai-ready' ? 'Processos cíveis' : 'Minutas e demandas');
 
   constructor() {
     this.router.events

@@ -7,6 +7,18 @@ export const routes: Routes = [
     loadComponent: () => import('./ai-ready/ai-ready-page.component').then(module => module.AiReadyPageComponent),
   },
   {
+    path: 'bjn/demandas/nova',
+    loadComponent: () => import('./bjn/demands/demand-new.component').then(module => module.BjnDemandNewComponent),
+  },
+  {
+    path: 'bjn/demandas/:id',
+    loadComponent: () => import('./bjn/demands/demand-detail.component').then(module => module.BjnDemandDetailComponent),
+  },
+  {
+    path: 'bjn/demandas',
+    loadComponent: () => import('./bjn/demands/demand-list.component').then(module => module.BjnDemandListComponent),
+  },
+  {
     path: 'bjn',
     loadComponent: () => import('./bjn/bjn-page.component').then(module => module.BjnPageComponent),
   },

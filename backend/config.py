@@ -49,6 +49,18 @@ class Settings(Contract):
     bradesco_analysis_max_tokens: int = Field(default=9000, ge=1024, le=30000)
     max_analysis_chunks: int = Field(default=24, ge=1, le=100)
 
+    # Persistência isolada da análise processual; defaults são somente para desenvolvimento local.
+    bjn_database_path: Path = ROOT / ".runtime" / "bjn" / "demandas.sqlite3"
+    bjn_upload_directory: Path = ROOT / ".runtime" / "bjn" / "uploads"
+    bjn_allowed_lawyers: list[str] = Field(default_factory=list)
+    bjn_demo_lawyers_enabled: bool = False
+    bjn_document_hash_key: SecretStr = SecretStr("")
+    bjn_notification_smtp_host: str = ""
+    bjn_notification_smtp_port: int = 587
+    bjn_notification_sender: str = ""
+    bjn_notification_username: str = ""
+    bjn_notification_password: SecretStr = SecretStr("")
+
     gateway_token: SecretStr = SecretStr("")
 
     @field_validator("cors_origins")
@@ -114,12 +126,23 @@ def load_settings() -> Settings:
         "WORKSPACE_TTL_MINUTES": "workspace_ttl_minutes",
         "MAX_WORKSPACES_IN_MEMORY": "max_workspaces_in_memory",
         "GATEWAY_TOKEN": "gateway_token",
+        "BJN_DATABASE_PATH": "bjn_database_path",
+        "BJN_UPLOAD_DIRECTORY": "bjn_upload_directory",
+        "BJN_DEMO_LAWYERS": "bjn_demo_lawyers_enabled",
+        "BJN_DOCUMENT_HASH_KEY": "bjn_document_hash_key",
+        "BJN_NOTIFICATION_SMTP_HOST": "bjn_notification_smtp_host",
+        "BJN_NOTIFICATION_SMTP_PORT": "bjn_notification_smtp_port",
+        "BJN_NOTIFICATION_SENDER": "bjn_notification_sender",
+        "BJN_NOTIFICATION_USERNAME": "bjn_notification_username",
+        "BJN_NOTIFICATION_PASSWORD": "bjn_notification_password",
     }
     for layer in (file_values, os.environ):
         for variable, field in mapping.items():
             if variable in layer:
                 value = layer[variable].strip()
                 data[field] = value or None if field == "bradesco_ca_bundle" else value
+        if "BJN_ALLOWED_LAWYERS" in layer:
+            data["bjn_allowed_lawyers"] = [value.strip().lower() for value in layer["BJN_ALLOWED_LAWYERS"].split(",") if value.strip()]
         if "CORS_ORIGINS" in layer:
             data["cors_origins"] = [item.strip() for item in layer["CORS_ORIGINS"].split(",") if item.strip()]
     try:

@@ -14,3 +14,9 @@ docs/source.bundle
 # Relatórios locais e aprovações corporativas
 frontend/reports/
 frontend/config/approved-packages.json
+
+# Persistência local de demandas e arquivos enviados; nunca versionar dados reais.
+.runtime/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

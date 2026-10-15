@@ -12,7 +12,7 @@ import {Assessment,BjnApiService,ScriptQuestion,ScriptWorkflow} from '../core/bj
  @if (loading()){<p>Carregando questionário do script BJN...</p>}
  @else if (error() && !workflow()){<p role="alert" class="bjn-error">{{error()}}</p>}
  @else if (!result()) {
-  <div class="bjn-progress"><span>Página {{page()}} de {{workflow()?.source_pages}}</span><strong>Checklist – abertura de demanda</strong><div class="bjn-progress-track"><span [style.width.%]="page()*100/8"></span></div></div>
+  <div class="bjn-progress"><span>Página {{page()}} de {{workflow()?.source_pages}}</span><strong>Questionário de contratação</strong><div class="bjn-progress-track"><span [style.width.%]="page()*100/8"></span></div></div>
   @for(question of visibleQuestions();track question.id){<div class="bjn-question">
    <label [attr.for]="question.id">{{question.label}}</label>
    @if(question.type==='choice' || question.type==='boolean'){
