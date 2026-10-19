@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backend.config import load_settings
+from backend.config import load_settings, text_model_configuration_diagnostic
 from backend.services.bradesco_bridge import BradescoBridgeClient, BradescoBridgeError
 
 
@@ -40,7 +40,7 @@ def main() -> int:
     status = client.text_generator_status()
     diagnostic = {
         "ambiente": settings.bradesco_environment,
-        "arquivo_env_encontrado": Path(os.getenv("APP_ENV_FILE", ROOT / ".env")).is_file(),
+        **text_model_configuration_diagnostic(settings),
         "modelo_configurado": bool(settings.bradesco_text_model.strip()),
         "codigo_configuracao": status["code"],
         "autenticacao_configurada": token_present or credentials_present,
@@ -54,6 +54,8 @@ def main() -> int:
     }
 
     # --check-only nunca estabelece conexão nem envia dados para a Bridge.
+    # Também exibe de qual fonte o deployment foi efetivamente carregado,
+    # sem imprimir o valor de qualquer configuração corporativa.
     # Use o modo completo exclusivamente em ambiente corporativo autorizado.
     if not client.configured:
         diagnostic.update({

@@ -2,7 +2,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from fastapi.testclient import TestClient
-from backend.config import Settings, load_settings
+from backend.config import Settings, load_settings, text_model_configuration_diagnostic
 from backend.principal import create_app
 from backend.services.bradesco_bridge import BradescoBridgeClient
 
@@ -54,3 +54,70 @@ def test_env_da_raiz_prevalece_sobre_json_e_gera_estado_pronto(monkeypatch):
         settings = load_settings()
         assert BradescoBridgeClient(settings).configured
         assert settings.bradesco_text_model == 'deployment-ficticio'
+
+
+def test_env_da_raiz_nao_e_apagado_por_variavel_corporativa_vazia(monkeypatch):
+    """Reproduz o falso erro quando o Windows herda BRADESCO_TEXT_MODEL vazio."""
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        env = root / '.env'
+        env.write_text(
+            'BRADESCO_IDENTIFICADOR=identificador-de-teste\n'
+            'BRADESCO_SENHA=senha-de-teste\n'
+            'BRADESCO_TEXT_MODEL=deployment-de-teste\n',
+            encoding='utf-8',
+        )
+        monkeypatch.setenv('APP_ENV_FILE', str(env))
+        monkeypatch.setenv('BRADESCO_TEXT_MODEL', '')
+        monkeypatch.setenv('BRADESCO_IDENTIFICADOR', '  ')
+        monkeypatch.setenv('BRADESCO_SENHA', '')
+        settings = load_settings()
+        assert settings.bradesco_text_model == 'deployment-de-teste'
+        assert BradescoBridgeClient(settings).configured
+        source = text_model_configuration_diagnostic(settings)
+        assert source['origem_modelo'] == 'arquivo_env'
+        assert source['variavel_vazia_ignoravel'] is True
+        assert source['modelo_carregado_pela_api'] is True
+        assert 'deployment-de-teste' not in str(source)
+        assert 'senha-de-teste' not in str(source)
+
+
+def test_variavel_corporativa_nao_vazia_tem_precedencia(monkeypatch):
+    """Mantém possibilidade de configuração via gerenciador de segredos externo."""
+    with TemporaryDirectory() as temporary:
+        env = Path(temporary) / '.env'
+        env.write_text('BRADESCO_TEXT_MODEL=deployment-do-arquivo\n', encoding='utf-8')
+        monkeypatch.setenv('APP_ENV_FILE', str(env))
+        monkeypatch.setenv('BRADESCO_TEXT_MODEL', 'deployment-do-processo')
+        settings = load_settings()
+        assert settings.bradesco_text_model == 'deployment-do-processo'
+        source = text_model_configuration_diagnostic(settings)
+        assert source['origem_modelo'] == 'variavel_do_processo'
+        assert 'deployment-do-processo' not in str(source)
+
+
+def test_arquivo_env_relativo_independe_do_diretorio_atual(monkeypatch, tmp_path):
+    """APP_ENV_FILE relativo resolve sempre a partir da raiz da aplicação."""
+    import backend.config as config_module
+    monkeypatch.setattr(config_module, 'ROOT', tmp_path)
+    (tmp_path / 'settings.env').write_text('BRADESCO_TEXT_MODEL=deployment-sintetico\n', encoding='utf-8')
+    monkeypatch.setenv('APP_ENV_FILE', 'settings.env')
+    monkeypatch.delenv('BRADESCO_TEXT_MODEL', raising=False)
+    monkeypatch.chdir(tmp_path.parent)
+    settings = load_settings()
+    assert settings.bradesco_text_model == 'deployment-sintetico'
+    assert text_model_configuration_diagnostic(settings)['arquivo_env_encontrado'] is True
+
+
+def test_diagnostico_aponta_env_em_pasta_incorreta(monkeypatch, tmp_path):
+    """Aponta um .env em backend quando a raiz ainda não tem configuração."""
+    import backend.config as config_module
+    monkeypatch.setattr(config_module, 'ROOT', tmp_path)
+    monkeypatch.delenv('APP_ENV_FILE', raising=False)
+    monkeypatch.delenv('BRADESCO_TEXT_MODEL', raising=False)
+    (tmp_path / 'backend').mkdir()
+    (tmp_path / 'backend' / '.env').write_text('BRADESCO_TEXT_MODEL=nao-deve-ser-carregado\n', encoding='utf-8')
+    settings = load_settings()
+    diagnosis = text_model_configuration_diagnostic(settings)
+    assert diagnosis['env_em_backend_em_vez_da_raiz'] is True
+    assert diagnosis['modelo_carregado_pela_api'] is False

@@ -83,14 +83,67 @@ class Settings(Contract):
         return self
 
 
+def environment_file_path() -> Path:
+    """Resolve o arquivo central .env a partir da raiz, independentemente do terminal.
+
+    Uma escolha explícita em APP_ENV_FILE continua permitida, mas um caminho
+    relativo sempre se refere à raiz do projeto, evitando arquivos diferentes
+    conforme a pasta de onde o servidor foi iniciado.
+    """
+    configured = os.environ.get("APP_ENV_FILE", "").strip()
+    candidate = Path(configured).expanduser() if configured else ROOT / ".env"
+    return (ROOT / candidate if not candidate.is_absolute() else candidate).resolve()
+
+
+def _read_environment_file(env_path: Path) -> dict[str, str]:
+    """Lê o .env sem transferir credenciais para o ambiente global do processo."""
+    if not env_path.is_file():
+        return {}
+    return Config(env_path, environ={}, encoding="utf-8-sig").file_values
+
+
+def text_model_configuration_diagnostic(settings: Settings) -> dict[str, object]:
+    """Informa a origem do deployment sem revelar seu nome nem credenciais.
+
+    A saída serve ao diagnóstico local. Não deve ser enviada ao navegador,
+    porque caminhos de arquivos podem identificar o ambiente do operador.
+    """
+    env_path = environment_file_path()
+    file_values = _read_environment_file(env_path)
+    from_process = os.environ.get("BRADESCO_TEXT_MODEL", "").strip()
+    from_file = file_values.get("BRADESCO_TEXT_MODEL", "").strip()
+    source = (
+        "variavel_do_processo" if from_process else
+        "arquivo_env" if from_file else
+        "json_ou_injecao" if settings.bradesco_text_model.strip() else
+        "nao_identificado"
+    )
+    return {
+        "arquivo_env_lido": str(env_path),
+        "arquivo_env_encontrado": env_path.is_file(),
+        "modelo_no_arquivo_env": bool(from_file),
+        "modelo_na_variavel_do_processo": bool(from_process),
+        "variavel_vazia_ignoravel": "BRADESCO_TEXT_MODEL" in os.environ and not from_process and bool(from_file),
+        "origem_modelo": source,
+        "modelo_carregado_pela_api": bool(settings.bradesco_text_model.strip()),
+        "env_em_backend_em_vez_da_raiz": (ROOT / "backend" / ".env").is_file() and not env_path.is_file(),
+    }
+
+
 def load_settings() -> Settings:
-    """Carrega JSON, .env e variáveis de ambiente, nessa ordem de precedência."""
-    env_path = Path(os.environ.get("APP_ENV_FILE", ROOT / ".env"))
-    if "APP_ENV_FILE" in os.environ and not env_path.is_file():
-        raise ValueError("APP_ENV_FILE aponta para um arquivo inexistente.")
-    file_values = Config(env_path if env_path.is_file() else None, environ={}, encoding="utf-8-sig").file_values
+    """Carrega JSON, .env e variáveis não vazias do processo, em ordem.
+
+    Variáveis BRADESCO_* vazias herdadas do terminal não apagam valores
+    explícitos do .env. Esse caso impedia a ativação do Text Generator mesmo
+    com o deployment informado corretamente no arquivo de configuração.
+    """
+    env_path = environment_file_path()
+    if os.environ.get("APP_ENV_FILE", "").strip() and not env_path.is_file():
+        raise ValueError("APP_ENV_FILE aponta para um arquivo inexistente. Revise o caminho relativo à raiz do projeto.")
+    file_values = _read_environment_file(env_path)
     variables = {**file_values, **os.environ}
-    path = Path(variables.get("APP_CONFIG_PATH", ROOT / "config/app.settings.json"))
+    raw_config_path = Path(str(variables.get("APP_CONFIG_PATH", ROOT / "config/app.settings.json"))).expanduser()
+    path = ROOT / raw_config_path if not raw_config_path.is_absolute() else raw_config_path
     if "APP_CONFIG_PATH" in variables and not path.is_file():
         raise ValueError("APP_CONFIG_PATH aponta para um arquivo inexistente.")
     try:
@@ -140,7 +193,12 @@ def load_settings() -> Settings:
         for variable, field in mapping.items():
             if variable in layer:
                 value = layer[variable].strip()
-                data[field] = value or None if field == "bradesco_ca_bundle" else value
+                # Evita que uma variável corporativa vazia herdada do Windows
+                # apague a configuração válida do arquivo .env da raiz.
+                # Variáveis com valor definido continuam tendo precedência.
+                if layer is os.environ and variable.startswith("BRADESCO_") and not value and file_values.get(variable, "").strip():
+                    continue
+                data[field] = (value or None) if field == "bradesco_ca_bundle" else value
         if "BJN_ALLOWED_LAWYERS" in layer:
             data["bjn_allowed_lawyers"] = [value.strip().lower() for value in layer["BJN_ALLOWED_LAWYERS"].split(",") if value.strip()]
         if "CORS_ORIGINS" in layer:
