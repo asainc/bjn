@@ -10,7 +10,8 @@ from backend.services.bradesco_bridge import BradescoBridgeClient
 def test_diagnostico_distingue_deployment_e_credenciais():
     """Nunca confunde workflow Q&A e credenciais com deployment de texto."""
     base = {"bradesco_identificador": "fake-id", "bradesco_senha": "fake-password", "bradesco_qa_workflow_code": "workflow-ficticio"}
-    bridge = BradescoBridgeClient(Settings(**base))
+    # O caso sem deployment agora precisa ser explícito, pois existe um padrão.
+    bridge = BradescoBridgeClient(Settings(bradesco_text_model="", **base))
     assert not bridge.configured
     assert bridge.text_generator_status()["code"] == "TEXT_MODEL_MISSING"
     assert "fake-password" not in str(bridge.text_generator_status())
@@ -28,7 +29,7 @@ def test_configuracao_expoe_apenas_estado_e_nao_credenciais():
     with TemporaryDirectory() as temporary:
         path = Path(temporary)
         app = create_app(Settings(bjn_database_path=path / "db.sqlite", bjn_upload_directory=path / "uploads",
-                                  bradesco_identificador="fake-id", bradesco_senha="fake-password"))
+                                  bradesco_identificador="fake-id", bradesco_senha="fake-password", bradesco_text_model=""))
         with TestClient(app) as client:
             response = client.get('/api/v3/bjn/demandas/configuracao')
         assert response.status_code == 200
@@ -120,4 +121,40 @@ def test_diagnostico_aponta_env_em_pasta_incorreta(monkeypatch, tmp_path):
     settings = load_settings()
     diagnosis = text_model_configuration_diagnostic(settings)
     assert diagnosis['env_em_backend_em_vez_da_raiz'] is True
-    assert diagnosis['modelo_carregado_pela_api'] is False
+    assert diagnosis['modelo_carregado_pela_api'] is True
+    assert diagnosis['origem_modelo'] == 'padrao'
+
+
+def test_modelo_padrao_sem_configuracao_explicita():
+    """O valor padrão mantém o gerador identificado mesmo sem variável externa."""
+    from backend.config import DEFAULT_BRADESCO_TEXT_MODEL
+
+    settings = Settings()
+    assert settings.bradesco_text_model == DEFAULT_BRADESCO_TEXT_MODEL == "gpt-5.1"
+    assert BradescoBridgeClient(settings).text_generator_status()["code"] == "BRIDGE_CREDENTIALS_MISSING"
+
+
+def test_modelo_padrao_com_variaveis_vazias_e_json_vazio(monkeypatch, tmp_path):
+    """Campos vazios não devem desativar o deployment padrão."""
+    env = tmp_path / ".env"
+    env.write_text("BRADESCO_TEXT_MODEL=   \n", encoding="utf-8")
+    config = tmp_path / "app.settings.json"
+    config.write_text('{"bradesco_text_model": ""}', encoding="utf-8")
+    monkeypatch.setenv("APP_ENV_FILE", str(env))
+    monkeypatch.setenv("APP_CONFIG_PATH", str(config))
+    monkeypatch.setenv("BRADESCO_TEXT_MODEL", "")
+
+    settings = load_settings()
+    assert settings.bradesco_text_model == "gpt-5.1"
+    assert text_model_configuration_diagnostic(settings)["modelo_carregado_pela_api"] is True
+
+
+def test_modelo_customizado_substitui_padrao(monkeypatch, tmp_path):
+    """Um deployment corporativo explícito continua tendo precedência."""
+    env = tmp_path / ".env"
+    env.write_text("BRADESCO_TEXT_MODEL=deployment-homologado\n", encoding="utf-8")
+    monkeypatch.setenv("APP_ENV_FILE", str(env))
+    monkeypatch.delenv("APP_CONFIG_PATH", raising=False)
+    monkeypatch.delenv("BRADESCO_TEXT_MODEL", raising=False)
+
+    assert load_settings().bradesco_text_model == "deployment-homologado"

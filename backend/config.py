@@ -12,6 +12,7 @@ from starlette.config import Config
 from backend.contracts.base import Contract
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_BRADESCO_TEXT_MODEL = "gpt-5.1"
 
 
 class Settings(Contract):
@@ -42,7 +43,7 @@ class Settings(Contract):
     bradesco_qa_url: str = ""
     bradesco_qa_workflow_code: str = Field(default="", max_length=180)
     bradesco_timeout_seconds: int = Field(default=600, ge=10, le=1800)
-    bradesco_text_model: str = Field(default="", max_length=100)
+    bradesco_text_model: str = Field(default=DEFAULT_BRADESCO_TEXT_MODEL, max_length=100)
     bradesco_text_temperature: float = Field(default=0.2, ge=0, le=2)
     bradesco_text_max_tokens: int = Field(default=12000, ge=1024, le=65536)
     bradesco_prompt_max_chars: int = Field(default=52000, ge=12000, le=250000)
@@ -115,6 +116,7 @@ def text_model_configuration_diagnostic(settings: Settings) -> dict[str, object]
     source = (
         "variavel_do_processo" if from_process else
         "arquivo_env" if from_file else
+        "padrao" if settings.bradesco_text_model.strip() == DEFAULT_BRADESCO_TEXT_MODEL else
         "json_ou_injecao" if settings.bradesco_text_model.strip() else
         "nao_identificado"
     )
@@ -152,6 +154,12 @@ def load_settings() -> Settings:
         raise ValueError("Não foi possível ler o JSON de configuração do backend.") from None
     if not isinstance(data, dict):
         raise ValueError("A configuração do backend deve ser um objeto JSON.")
+
+    # Um campo vazio no JSON não deve apagar o valor padrão. Valores não vazios
+    # permanecem configuráveis por gerenciadores corporativos de parâmetros.
+    json_model = data.get("bradesco_text_model")
+    if isinstance(json_model, str) and not json_model.strip():
+        data.pop("bradesco_text_model")
 
     mapping = {
         "APP_ENV": "environment",
@@ -193,9 +201,12 @@ def load_settings() -> Settings:
         for variable, field in mapping.items():
             if variable in layer:
                 value = layer[variable].strip()
-                # Evita que uma variável corporativa vazia herdada do Windows
-                # apague a configuração válida do arquivo .env da raiz.
-                # Variáveis com valor definido continuam tendo precedência.
+                # Um deployment vazio, seja no .env ou no processo, não
+                # substitui o padrão gpt-5.1 nem outra configuração válida.
+                # Para os demais parâmetros corporativos, evita também que
+                # variáveis vazias do Windows apaguem o valor do .env.
+                if field == "bradesco_text_model" and not value:
+                    continue
                 if layer is os.environ and variable.startswith("BRADESCO_") and not value and file_values.get(variable, "").strip():
                     continue
                 data[field] = (value or None) if field == "bradesco_ca_bundle" else value
