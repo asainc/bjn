@@ -40,7 +40,7 @@ class Settings(Contract):
     bradesco_text_url: str = ""
     bradesco_identity_url: str = ""
     bradesco_qa_url: str = ""
-    bradesco_qa_workflow_code: str = Field(default="CD_WRFL_QA_778_LEITURA_SENTENCA_PIAUI_AAJR_SYNC", min_length=1, max_length=180)
+    bradesco_qa_workflow_code: str = Field(default="", max_length=180)
     bradesco_timeout_seconds: int = Field(default=600, ge=10, le=1800)
     bradesco_text_model: str = Field(default="", max_length=100)
     bradesco_text_temperature: float = Field(default=0.2, ge=0, le=2)

@@ -119,7 +119,10 @@ def test_opinion_approved_by_assigned_lawyer_and_notified_only_when_configured()
         assert assigned.status_code==200
         assert client.post(f"{BASE}/{uid}/parecer/rascunho",headers=identity()).status_code==403
         # O retorno sintético permite testar a integração sem conectar à API corporativa.
-        app.state.bjn_opinion_ai.generate=lambda nature,description:("Minuta sintética provisória a ser integralmente revisada pelo advogado responsável.","hash-teste")
+        from backend.services.bjn_document_opinion import OpinionSuggestion
+        app.state.bjn_document_opinion.analyze=lambda nature,description,documents: OpinionSuggestion(
+            nature, "Minuta sintética provisória a ser integralmente revisada pelo advogado responsável.",
+            "hash-teste", "documento-teste", len(documents), ())
         draft=client.post(f"{BASE}/{uid}/parecer/rascunho",headers=identity("advogado"))
         assert draft.status_code==200,draft.text
         assert draft.json()["status"]=="PARECER_EM_REVISAO"

@@ -9,7 +9,7 @@ O layout mantém a identidade da aplicação existente: plano de fundo cinza-cla
 ## 2. Como acessar
 
 - **BJN > Demandas**: `http://localhost:4200/bjn/demandas`, com busca, filtro e lista das demandas a que o usuário tem acesso.
-- **BJN > Nova demanda**: `http://localhost:4200/bjn/demandas/nova`, com departamento jurídico, solicitante autenticado, área, natureza, título, descrição, envolvidos opcionais e anexos.
+- **BJN > Nova demanda**: `http://localhost:4200/bjn/demandas/nova`, com Departamento Solicitante, solicitante autenticado, área, natureza, título, descrição, envolvidos opcionais e anexos.
 - **BJN > Acompanhamento**: `http://localhost:4200/bjn/demandas/{id}`, com resumo, status, advogado, envolvidos, documentos, prévia de PDF/imagem, novos uploads e histórico de eventos.
 
 O identificador da demanda é gerado no servidor. Não é presumido que represente o número de processo utilizado em outra ferramenta do banco. **Não há integração com sistema externo de protocolo ou distribuição neste pacote.**

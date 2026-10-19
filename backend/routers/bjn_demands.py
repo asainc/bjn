@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import ValidationError, Field
 from backend.contracts.base import Contract
 from backend.services.bjn_demand_ai import DemandGuidanceInput
+from backend.services.bjn_document_opinion import PROMPTS, MAX_ANALYSIS_FILES
 from backend.services.bjn_journey import TriageInput, routing_decision, NATURES, CompetenceReview, OpinionPublish, validate_journey_fields, issue_triage_proof, verify_triage_proof
 from backend.services.bjn_notifications import dispatch_notifications
 from backend.services.bjn_demand_store import DEMO_LAWYERS
@@ -100,7 +101,8 @@ def list_demands(request: Request, status: str = "", search: str = "", limit: in
 def _public_validation_fields(error: ValidationError) -> list[ErrorField]:
     """Traduz os campos rejeitados sem repetir valores nem metadados sensíveis do formulário."""
     known_fields = {
-        "legal_department": "Departamento jurídico",
+        "requesting_department": "Departamento Solicitante",
+        "legal_department": "Departamento Solicitante",
         "consult_area": "Área de consulta",
         "service_nature": "Natureza do serviço",
         "title": "Título da demanda",
@@ -163,6 +165,17 @@ def triage_demand(body: TriageInput, request: Request) -> dict:
     return result
 
 
+def _refresh_document_suggestion(request: Request, demand: dict, actor: Actor, ids: list[str]) -> dict:
+    """Upload nunca falha em razão da IA; falha fica visível ao solicitante."""
+    if demand["service_nature"] not in PROMPTS or not ids:
+        return demand
+    try:
+        return _analyze_saved_documents(request, demand["id"], actor, ids[:MAX_ANALYSIS_FILES])
+    except ServiceError as exc:
+        demand["document_analysis_error"] = str(exc)
+        return demand
+
+
 @router.post("/fluxo", status_code=201)
 def create_journey_demand(request: Request, payload: Annotated[str, Form()], files: Annotated[list[UploadFile] | None, File()] = None) -> dict:
     """Cadastro com validações obrigatórias por natureza e protocolo gerado no servidor."""
@@ -178,7 +191,9 @@ def create_journey_demand(request: Request, payload: Annotated[str, Form()], fil
     validate_journey_fields(data, len(files or []))
     uploaded = _uploaded(request, files or [], "ANEXO")
     try:
-        return store_from(request).create(data, actor_from(request), uploaded)
+        created = store_from(request).create(data, actor, uploaded)
+        pdf_ids = [doc["id"] for doc in created["documents"] if doc["media_type"] == "application/pdf"]
+        return _refresh_document_suggestion(request, created, actor, pdf_ids)
     finally:
         _cleanup(uploaded)
 
@@ -197,9 +212,12 @@ def create_demand(request: Request, payload: Annotated[str, Form()], files: Anno
         raise ServiceError("Não foi possível ler o formulário enviado.", 422, code="INVALID_FORM") from exc
     if request.app.state.settings.environment != "local":
         raise ServiceError("Use o cadastro de demandas com triagem obrigatória.", 409, code="JOURNEY_REQUIRED")
+    actor = actor_from(request)
     uploaded = _uploaded(request, files or [], "ANEXO")
     try:
-        return store_from(request).create(data, actor_from(request), uploaded)
+        created = store_from(request).create(data, actor, uploaded)
+        pdf_ids = [doc["id"] for doc in created["documents"] if doc["media_type"] == "application/pdf"]
+        return _refresh_document_suggestion(request, created, actor, pdf_ids)
     finally:
         _cleanup(uploaded)
 
@@ -210,6 +228,46 @@ def analyze_draft(body: DemandGuidanceInput, request: Request) -> dict:
     actor_from(request)
     guidance, prompt_hash, _ = request.app.state.bjn_demand_ai.analyze(body.description)
     return {**guidance.model_dump(), "prompt_version": prompt_hash[:12], "aviso": "Sugestão gerada por IA. Não constitui parecer jurídico; o usuário decide se precisa de atendimento humano."}
+
+
+def _analyze_saved_documents(request: Request, demand_id: str, actor: Actor, document_ids: list[str]) -> dict:
+    """Usa somente arquivos autorizados e registra resultado para a tela de acompanhamento."""
+    store = store_from(request)
+    demand = store.get_demand(demand_id, actor)
+    if demand["service_nature"] not in PROMPTS:
+        raise ServiceError("Natureza sem prompt documental específico.", 422, code="NATURE_NOT_SUPPORTED")
+    files = []
+    for document_id in document_ids[:MAX_ANALYSIS_FILES]:
+        path, meta = store.document(demand_id, document_id, actor)
+        files.append((meta["original_name"], meta["media_type"], path.read_bytes()))
+    result = request.app.state.bjn_document_opinion.analyze(demand["service_nature"], demand["description"], files)
+    return store.save_document_suggestion(demand_id, actor, result)
+
+
+@router.post("/assistente/analisar-documentos")
+def analyze_documents_before_registration(request: Request, nature: Annotated[str, Form()],
+                                           description: Annotated[str, Form()],
+                                           files: Annotated[list[UploadFile], File()]) -> dict:
+    """Prévia após selecionar arquivos: leitura efêmera, sem cadastro ou publicação."""
+    actor_from(request)
+    saved = _uploaded(request, files, "ANEXO")
+    try:
+        result = request.app.state.bjn_document_opinion.analyze(nature, description,
+            [(item.original_name, item.media_type, item.temp_path.read_bytes()) for item in saved])
+        return result.as_dict()
+    finally:
+        _cleanup(saved)
+
+
+@router.post("/{demand_id}/assistente/analisar-documentos")
+def analyze_existing_documents(demand_id: str, request: Request) -> dict:
+    """Permite reprocessamento explícito dos PDFs anexados à demanda."""
+    actor = actor_from(request)
+    demand = store_from(request).get_demand(demand_id, actor)
+    document_ids = [item["id"] for item in demand["documents"] if item["media_type"] == "application/pdf"]
+    if not document_ids:
+        raise ServiceError("A demanda não possui PDF pesquisável para análise.", 422, code="DOCUMENT_TEXT_UNAVAILABLE")
+    return _analyze_saved_documents(request, demand_id, actor, document_ids[:MAX_ANALYSIS_FILES])
 
 
 @router.post("/{demand_id}/assistente/analisar")
@@ -240,6 +298,19 @@ def generate_opinion(demand_id: str, request: Request) -> dict:
     actor = actor_from(request)
     store = store_from(request)
     demand = store.demand_for_opinion(demand_id, actor)
+    if demand["service_nature"] in PROMPTS:
+        detail = store.get_demand(demand_id, actor)
+        pdf_documents = [entry for entry in detail["documents"] if entry["media_type"] == "application/pdf"][:MAX_ANALYSIS_FILES]
+        if not pdf_documents:
+            raise ServiceError("Não há PDF pesquisável. O advogado pode redigir o parecer manualmente.", 422, code="DOCUMENT_TEXT_UNAVAILABLE")
+        source = []
+        for entry in pdf_documents:
+            path, meta = store.document(demand_id, entry["id"], actor)
+            source.append((meta["original_name"], meta["media_type"], path.read_bytes()))
+        suggestion = request.app.state.bjn_document_opinion.analyze(demand["service_nature"], demand["description"], source)
+        store.save_document_suggestion(demand_id, actor, suggestion)
+        return store.save_opinion_draft(demand_id, actor, suggestion.text, suggestion.prompt_hash)
+    # Pareceres em geral têm fluxo próprio e continuam com prompt genérico.
     text, digest = request.app.state.bjn_opinion_ai.generate(demand["service_nature"], demand["description"])
     return store.save_opinion_draft(demand_id, actor, text, digest)
 
@@ -272,12 +343,17 @@ def attach_documents(demand_id: str, request: Request, files: Annotated[list[Upl
     if not files:
         raise ServiceError("Selecione ao menos um documento.", 422, code="MISSING_FILES")
     store = store_from(request)
-    store.get_demand(demand_id, actor_from(request))
+    actor = actor_from(request)
+    previous = store.get_demand(demand_id, actor)
+    previous_ids = {item["id"] for item in previous["documents"]}
     uploaded = _uploaded(request, files, "DOCUMENTO_ENVIADO")
     if not uploaded:
         raise ServiceError("Selecione ao menos um documento.", 422, code="MISSING_FILES")
     try:
-        return store.add_documents(demand_id, actor_from(request), uploaded)
+        updated = store.add_documents(demand_id, actor, uploaded)
+        pdf_ids = [doc["id"] for doc in updated["documents"]
+                   if doc["id"] not in previous_ids and doc["media_type"] == "application/pdf"]
+        return _refresh_document_suggestion(request, updated, actor, pdf_ids)
     finally:
         _cleanup(uploaded)
 

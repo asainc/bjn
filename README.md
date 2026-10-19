@@ -264,3 +264,10 @@ O BJN inclui análise opcional do campo **Descrição da consulta** com `gpt_bra
 ### Gestão de demandas BJN — jornada integrada
 
 Consulte `docs/BJN_JORNADA_DEMANDAS_2026_10_14.md` para o novo fluxo de triagem, cadastro, distribuição, geração assistida e revisão de parecer, consulta, privacidade e configuração de notificações.
+
+
+## BJN — Sugestão documental de IA (2026-10-16)
+
+O cadastro de demandas oferece uma **Sugestão da IA** automática ao anexar PDF pesquisável e selecionar Inventário, Alvará, Curatela ou Procuração. O backend utiliza um prompt `.md` próprio por natureza e registra uma sugestão preliminar no acompanhamento após o cadastro. A publicação jurídica permanece exclusiva do advogado designado.
+
+Para a arquitetura, regras de arquivos, limites, exemplos de execução e o único local de configuração da Bridge/agente, consulte [`docs/BJN_ANALISE_DOCUMENTAL_AUTOMATICA.md`](docs/BJN_ANALISE_DOCUMENTAL_AUTOMATICA.md). Nenhuma credencial real acompanha o repositório. PDFs digitalizados e imagens sem camada textual ainda exigem análise humana.

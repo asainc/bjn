@@ -26,6 +26,7 @@ from backend.services.workspace_store import WorkspaceStore
 from backend.services.bjn_demand_store import DemandStore, DEMO_LAWYERS
 from backend.services.bjn_demand_ai import BjnDemandAIService
 from backend.services.bjn_opinion import OpinionAIService
+from backend.services.bjn_document_opinion import BjnDocumentOpinionService
 from backend.version import API_CONTRACT_VERSION, API_PREFIX, APP_VERSION
 
 
@@ -64,9 +65,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.bridge = bridge
     app.state.process_intelligence = process_intelligence
     app.state.chat_service = chat_service
-    app.state.bjn_chat_service = ChatService(configuration, BradescoBridgeClient(configuration))
+    app.state.bjn_chat_service = ChatService(configuration, bridge)
     app.state.bjn_demand_ai = BjnDemandAIService(bridge)
     app.state.bjn_opinion_ai = OpinionAIService(bridge)
+    app.state.bjn_document_opinion = BjnDocumentOpinionService(bridge)
     # A chave HMAC é fornecida externamente. Em desenvolvimento local, a chave
     # é criada uma única vez no diretório privado e não acompanha o código.
     cpf_key = configuration.bjn_document_hash_key.get_secret_value()

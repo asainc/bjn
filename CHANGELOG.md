@@ -86,3 +86,12 @@
 - Consulta com filtros e CPF protegido por HMAC, com busca via POST.
 - Notificações após publicação, com fila local de pendências se SMTP não configurado.
 - Testes e documentação em `docs/BJN_JORNADA_DEMANDAS_2026_10_14.md`.
+
+## 2026-10-16 — BJN / Análise documental por natureza
+
+- Campo renomeado para Departamento Solicitante; migração aditiva mantém registros antigos.
+- Arquivos de prompt Markdown por natureza: Inventário, Alvará, Curatela e Procuração.
+- Seleção/upload de PDF pesquisável inicia análise por `text_generator`, com prévia e persistência auditável.
+- Rascunho de IA não é publicado automaticamente; advogado responsável continua revisor e publicador.
+- Bridge e agente Q&A configuráveis somente pelo `.env` ou injeção externa de segredos; sem credenciais incluídas.
+- Rotas com reanálise autorizada e fallbacks explícitos para arquivos sem camada textual.

@@ -12,7 +12,7 @@ test('rotas de demandas não substituem as rotas de minutas e AI Ready',()=>{
 });
 test('cadastro valida campos, permite envolvidos e mantém anexos com a demanda',()=>{
   const view=file('src/app/bjn/demands/demand-new.component.ts');
-  for(const text of ['Departamento jurídico','Área de consulta','Natureza do serviço','Descrição da consulta','Envolvidos','Anexos','Resumo da demanda','this.api.create']) assert.ok(view.includes(text),text);
+  for(const text of ['Departamento Solicitante','Área de consulta','Natureza do serviço','Descrição da consulta','Envolvidos','Anexos','Resumo da demanda','this.api.create']) assert.ok(view.includes(text),text);
 });
 test('acompanhamento exibe responsável, histórico, visualizador e novos documentos',()=>{
   const view=file('src/app/bjn/demands/demand-detail.component.ts');
@@ -71,4 +71,17 @@ test('distribuição contém opção de advogado de testes e resolução depende
   assert.match(source, /lawyer_options/);
   assert.match(source, /confirmAIResolution/);
   assert.match(source, /resolveByAI/);
+});
+
+
+test('upload dispara análise de documentos e usa natureza para o prompt, sem publicação automática',()=>{
+  const create=file('src/app/bjn/demands/demand-new.component.ts');
+  const detail=file('src/app/bjn/demands/demand-detail.component.ts');
+  const api=file('src/app/core/bjn-demand-api.service.ts');
+  for(const expected of ['onNatureChanged', 'analyzeSelectedDocuments', 'this.api.analyzeUploadedDocuments', 'documentSuggestion()', 'Sugestão da IA']) assert.ok(create.includes(expected),expected);
+  assert.ok(detail.includes('document_ai_suggestion'));
+  assert.ok(detail.includes('reanalisar') || detail.includes('Reanalisar'));
+  assert.ok(api.includes('/assistente/analisar-documentos'));
+  assert.ok(api.includes('requesting_department:string'));
+  assert.ok(!create.includes('Departamento jurídico'));
 });

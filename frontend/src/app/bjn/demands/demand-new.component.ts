@@ -4,7 +4,7 @@ import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
-import {BjnDemandApiService, DemandConfiguration, DemandInput, InvolvedPerson, DemandGuidance, TriageCategory, TriageDecision} from '../../core/bjn-demand-api.service';
+import {BjnDemandApiService, DemandConfiguration, DemandInput, InvolvedPerson, DemandGuidance, DocumentAISuggestion, TriageCategory, TriageDecision} from '../../core/bjn-demand-api.service';
 import {friendlyApiError,readableSize} from './demand-ui';
 
 /** Identifica o campo com problema para orientar a correção sem expor dados do usuário. */
@@ -61,8 +61,8 @@ type ValidationIssue = {fieldId:string; message:string};
         <section class="surface demand-card" aria-labelledby="cad-dados">
           <div class="demand-section-heading"><span class="demand-step">01</span><div><h2 id="cad-dados">Dados da solicitação</h2><p>Informações que ajudam a direcionar a demanda.</p></div></div>
           <div class="demand-fields">
-            <div class="demand-field"><label for="dept">Departamento jurídico <span class="required">*</span></label>
-              <input id="dept" maxlength="120" [(ngModel)]="form.legal_department" placeholder="Informe o departamento" autocomplete="organization" required />
+            <div class="demand-field"><label for="dept">Departamento Solicitante <span class="required">*</span></label>
+              <input id="dept" maxlength="120" [(ngModel)]="form.requesting_department" placeholder="Informe o departamento" autocomplete="organization" required />
             </div>
             <div class="demand-field"><label>Solicitante</label>
               <div class="demand-readonly"><strong>{{configuration()?.actor?.name || 'Validando sessão...'}}</strong><small>Identificação fornecida pela sessão autenticada.</small></div>
@@ -72,7 +72,7 @@ type ValidationIssue = {fieldId:string; message:string};
                 <input id="area" maxlength="120" [(ngModel)]="form.consult_area" placeholder="Ex.: Negócios regionais" required />
               </div>
               <div class="demand-field"><label for="nature">Natureza do serviço <span class="required">*</span></label>
-                <select id="nature" [(ngModel)]="form.service_nature" required>
+                <select id="nature" [(ngModel)]="form.service_nature" (ngModelChange)="onNatureChanged($event)" required>
                   <option value="">Selecione a natureza</option>
                   @for(nature of natures;track nature){<option [value]="nature">{{nature}}</option>}
                 </select>
@@ -96,11 +96,25 @@ type ValidationIssue = {fieldId:string; message:string};
               <textarea id="description" maxlength="8000" rows="6" [(ngModel)]="form.description" placeholder="Apresente o contexto, sua necessidade e as informações relevantes para o atendimento." required></textarea>
             </div>
             <div class="demand-ai-block" aria-labelledby="demand-ai-title">
-              <div class="demand-ai-head"><div><span class="eyebrow">ORIENTAÇÃO INICIAL</span><h3 id="demand-ai-title">Consultar sugestão da IA</h3><p>Antes de abrir uma demanda, veja se há uma orientação inicial que possa ajudar.</p></div>
+              <div class="demand-ai-head"><div><span class="eyebrow">ORIENTAÇÃO INICIAL</span><h3 id="demand-ai-title" tabindex="-1">Consultar sugestão da IA</h3><p>Antes de abrir uma demanda, veja se há uma orientação inicial que possa ajudar.</p></div>
                 <button type="button" class="demand-outlined" [disabled]="analyzing() || form.description.trim().length<15 || !configuration()?.ai_available" (click)="analyzeDescription()">{{analyzing()?'Analisando...':'Analisar descrição'}}</button>
               </div>
-              <p class="demand-muted">Somente a descrição é enviada ao serviço corporativo text_generator. A análise não lê anexos e não aciona advogado.</p>
+              <p class="demand-muted">A descrição pode ser analisada separadamente. Ao selecionar um PDF pesquisável, a IA também o analisa com o prompt da natureza escolhida. A sugestão não aciona nem substitui advogado.</p>
               @if(!configuration()?.ai_available){<p class="demand-muted">Análise indisponível neste ambiente. O cadastro continua funcionando normalmente.</p>}
+              @if(analyzingDocument()){<p class="demand-muted" role="status">Analisando automaticamente o conteúdo dos anexos com o prompt de {{form.service_nature}}…</p>}
+              @if(documentAnalysisError()){<p class="demand-error" role="alert">{{documentAnalysisError()}}</p>}
+              @if(files().length && form.service_nature && form.service_nature!=='Pareceres em geral'){
+                <button type="button" class="demand-outlined" (click)="analyzeSelectedDocuments()" [disabled]="analyzingDocument() || !configuration()?.ai_available">Reanalisar documentos</button>
+              }
+              @if(documentSuggestion();as suggestion){
+                <div class="demand-ai-result bjn-document-suggestion" aria-live="polite">
+                  <strong>Sugestão da IA — {{suggestion.nature}} (parecer preliminar)</strong>
+                  <small>{{suggestion.documents_analyzed}} documento(s) analisado(s) · versão do prompt: {{suggestion.prompt_version}}</small>
+                  <div class="bjn-opinion-text">{{suggestion.text}}</div>
+                  @for(warning of suggestion.warnings;track $index){<p class="demand-muted">{{warning}}</p>}
+                  <small>Texto gerado automaticamente para análise; somente o advogado responsável pode revisar e publicar o parecer jurídico.</small>
+                </div>
+              }
               @if(aiError()){<p class="demand-error" role="alert">{{aiError()}}</p>}
               @if(guidance() && isGuidanceCurrent()){
                 <div class="demand-ai-result" aria-live="polite"><strong>Sugestão da IA — {{guidance()!.encaminhamento==='POSSIVEL_AUTOATENDIMENTO'?'Possível autoatendimento':'Avaliação humana recomendada'}}</strong>
@@ -139,6 +153,9 @@ type ValidationIssue = {fieldId:string; message:string};
             <strong>Selecione ou arraste documentos para anexar</strong><span>PDF, PNG ou JPEG · até 15 MB por arquivo · máximo de 20 arquivos</span>
             <input class="demand-file-input" id="demand-upload" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" multiple (change)="selectFiles($event)" />
           </label>
+          @if(analyzingDocument()){<p class="bjn-upload-analysis-status" role="status">A IA está lendo os PDFs selecionados e preparando uma sugestão conforme a natureza da demanda.</p>}
+          @if(documentSuggestion()){<p class="bjn-upload-analysis-status" role="status">Sugestão documental atualizada. <button type="button" class="demand-text-button" (click)="focusField('demand-ai-title')">Ver sugestão da IA</button></p>}
+          @if(documentAnalysisError()){<p class="demand-muted" role="status">A análise documental não foi concluída. Você pode continuar o cadastro e solicitar avaliação humana.</p>}
           @if(files().length){<div class="demand-upload-list" aria-label="Documentos selecionados">
             @for(file of files();track $index;let index=$index){<div class="demand-upload-row"><span class="demand-file-square">{{file.name.toLowerCase().endsWith('.pdf')?'PDF':'IMG'}}</span><div><strong>{{file.name}}</strong><small>{{size(file.size)}}</small></div><button type="button" class="demand-icon-button" [attr.aria-label]="'Remover '+file.name" (click)="removeFile(index)">×</button></div>}
           </div>}
@@ -188,6 +205,10 @@ export class BjnDemandNewComponent implements OnInit {
   readonly error=signal('');
   readonly aiError=signal('');
   readonly analyzing=signal(false);
+  readonly analyzingDocument=signal(false);
+  readonly documentSuggestion=signal<DocumentAISuggestion|null>(null);
+  readonly documentAnalysisError=signal('');
+  private analysisGeneration=0;
   readonly guidance=signal<DemandGuidance|null>(null);
   readonly analyzedDescription=signal('');
   readonly size=readableSize;
@@ -204,7 +225,7 @@ export class BjnDemandNewComponent implements OnInit {
   readonly triageResult=signal<TriageDecision|null>(null);
   readonly triageError=signal('');readonly triaging=signal(false);readonly triageComplete=signal(false);
   bankRole='';gcpj='';
-  form:DemandInput={legal_department:'',consult_area:'',service_nature:'',title:'',description:'',involved:[],triage_type:'',triage_proof:'',branch:'',requester_email:'',client_name:'',client_document:''};
+  form:DemandInput={requesting_department:'',consult_area:'',service_nature:'',title:'',description:'',involved:[],triage_type:'',triage_proof:'',branch:'',requester_email:'',client_name:'',client_document:''};
   chooseCategory(value:TriageCategory):void{this.triageCategory.set(value);this.triageResult.set(null);this.triageError.set('');this.bankRole='';this.gcpj='';}
   backToTriage():void {this.triageComplete.set(false);this.triageResult.set(null);this.form.triage_type='';this.form.triage_proof='';}
   async validateTriage():Promise<void>{
@@ -214,6 +235,27 @@ export class BjnDemandNewComponent implements OnInit {
     try {const result=await firstValueFrom(this.api.triage(category,this.bankRole||null,this.gcpj?this.gcpj==='SIM':null));
       this.triageResult.set(result);this.form.triage_type=result.requires_registration?'OUTRAS':'';this.form.triage_proof=result.proof||'';
     } catch(cause){this.triageError.set(friendlyApiError(cause));} finally{this.triaging.set(false);}
+  }
+  /** Alterar a natureza invalida a sugestão anterior e escolhe o prompt correspondente. */
+  onNatureChanged(nature:string):void {
+    this.form.service_nature=nature;
+    void this.analyzeSelectedDocuments();
+  }
+  /** O envio é automático, mas sua falha nunca bloqueia o registro da demanda. */
+  async analyzeSelectedDocuments():Promise<void> {
+    const generation=++this.analysisGeneration;
+    this.documentSuggestion.set(null);this.documentAnalysisError.set('');
+    const nature=this.form.service_nature;
+    const pdfs=this.files().filter(file=>file.type==='application/pdf').slice(0,4);
+    if(!nature||nature==='Pareceres em geral'||!this.files().length){this.analyzingDocument.set(false);return;}
+    if(!pdfs.length){this.analyzingDocument.set(false);this.documentAnalysisError.set('Análise automática disponível para PDF pesquisável. Imagens serão preservadas para avaliação humana.');return;}
+    if(!this.configuration()?.ai_available){this.analyzingDocument.set(false);this.documentAnalysisError.set('O text_generator não está configurado. É possível cadastrar a demanda normalmente.');return;}
+    this.analyzingDocument.set(true);
+    try{
+      const result=await firstValueFrom(this.api.analyzeUploadedDocuments(nature,this.form.description,pdfs));
+      if(generation===this.analysisGeneration)this.documentSuggestion.set(result);
+    }catch(cause){if(generation===this.analysisGeneration)this.documentAnalysisError.set(friendlyApiError(cause));}
+    finally{if(generation===this.analysisGeneration)this.analyzingDocument.set(false);}
   }
   isGuidanceCurrent():boolean {return this.analyzedDescription()===this.form.description.trim();}
   /** Análise apenas do texto explicitamente digitado, sem upload nem cadastro. */
@@ -237,7 +279,7 @@ export class BjnDemandNewComponent implements OnInit {
   validationIssues():ValidationIssue[] {
     const issues:ValidationIssue[]=[];
     const fields:[string,string,string,number][]=[
-      ['dept','Departamento jurídico',this.form.legal_department,2],
+      ['dept','Departamento Solicitante',this.form.requesting_department,2],
       ['area','Área de consulta',this.form.consult_area,2],
       ['nature','Natureza do serviço',this.form.service_nature,2],
       ['title','Título da demanda',this.form.title,5],
@@ -285,7 +327,7 @@ export class BjnDemandNewComponent implements OnInit {
   }
   addPerson():void {if(this.involved().length<20)this.involved.update(v=>[...v,{type:'Pessoa física',name:'',document:'',period:''}]);}
   removePerson(index:number):void {this.involved.update(v=>v.filter((_,i)=>i!==index));}
-  removeFile(index:number):void {this.files.update(v=>v.filter((_,i)=>i!==index));}
+  removeFile(index:number):void {this.files.update(v=>v.filter((_,i)=>i!==index));void this.analyzeSelectedDocuments();}
   over(event:DragEvent):void {event.preventDefault();this.dragging.set(true);}
   dropped(event:DragEvent):void {event.preventDefault();this.dragging.set(false);this.acceptFiles(Array.from(event.dataTransfer?.files||[]));}
   selectFiles(event:Event):void {const element=event.target as HTMLInputElement;this.acceptFiles(Array.from(element.files||[]));element.value='';}
@@ -299,6 +341,7 @@ export class BjnDemandNewComponent implements OnInit {
     }
     this.files.set(existing);
     if(incoming.length && !rejected)this.error.set('');
+    if(incoming.length)void this.analyzeSelectedDocuments();
   }
   /** Evita o silêncio do botão: valida, indica o campo e mantém dados em caso de falha. */
   async submit():Promise<void> {

@@ -8,11 +8,12 @@ export type DemandGuidance = {
   encaminhamento:'POSSIVEL_AUTOATENDIMENTO'|'ATENDIMENTO_HUMANO';
   aviso?:string;created_at?:string;
 };
+export type DocumentAISuggestion = {nature:string;text:string;kind:string;prompt_version:string;source_version:string;documents_analyzed:number;warnings:string[];created_at?:string};
 export type LawyerOption = {email:string;name:string;demo:boolean};
 export type DemandStatus = 'RECEBIDA' | 'EM_TRIAGEM' | 'EM_ANALISE' | 'AGUARDANDO_INFORMACOES' | 'CONCLUIDA' | 'CANCELADA' | 'RESOLVIDA_IA' | 'TRIAGEM_ADMINISTRATIVA' | 'ENCAMINHADA_AREA' | 'PARECER_EM_REVISAO';
 export type InvolvedPerson = {type:string; name:string; document:string; period:string};
 export type DemandInput = {
-  legal_department:string;
+  requesting_department:string;
   consult_area:string;
   service_nature:string;
   title:string;
@@ -35,10 +36,12 @@ export type DemandDocument = {
 };
 export type DemandEvent = {event_type:string; description:string; actor_id:string; created_at:string};
 export type DemandDetail = DemandSummary & {
-  legal_department:string; description:string; requester_id:string;
+  requesting_department:string; description:string; requester_id:string;
   involved:InvolvedPerson[]; documents:DemandDocument[]; events:DemandEvent[];
   can_manage:boolean; can_assign:boolean; can_resolve_ai:boolean; ai_guidance:DemandGuidance|null;
   registration:DemandRegistration|null;opinion:DemandOpinion|null;can_review_opinion:boolean;can_review_competence:boolean;
+  document_ai_suggestion:DocumentAISuggestion|null;
+  document_analysis_error?:string;
   notification_dispatch?:{status:string;count:number};
 };
 export type DemandConfiguration = {
@@ -89,6 +92,16 @@ export class BjnDemandApiService {
   }
   publishOpinion(id:string,finalText:string,confirmed:boolean){
     return this.http.post<DemandDetail>(`${this.endpoint}/${encodeURIComponent(id)}/parecer/publicar`,{final_text:finalText,human_review_confirmed:confirmed},this.headers());
+  }
+  /** Prévia efêmera: um upload inicia text_generator com prompt da natureza selecionada. */
+  analyzeUploadedDocuments(nature:string,description:string,files:File[]){
+    const form=new FormData();form.append('nature',nature);form.append('description',description);
+    for(const file of files)form.append('files',file,file.name);
+    return this.http.post<DocumentAISuggestion>(`${this.endpoint}/assistente/analisar-documentos`,form,this.headers());
+  }
+  /** Reprocessa documentos já associados ao protocolo, sem novos uploads. */
+  analyzeAttachedDocuments(id:string){
+    return this.http.post<DemandDetail>(`${this.endpoint}/${encodeURIComponent(id)}/assistente/analisar-documentos`,{},this.headers());
   }
   /** A análise do rascunho não cria demanda nem encaminha a advogado. */
   analyzeDraft(description:string) {

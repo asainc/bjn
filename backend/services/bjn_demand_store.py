@@ -18,7 +18,7 @@ from tempfile import NamedTemporaryFile
 from typing import BinaryIO, Iterable
 from uuid import uuid4
 
-from pydantic import Field
+from pydantic import Field, AliasChoices
 
 from backend.contracts.base import Contract
 from backend.errors import ServiceError
@@ -51,7 +51,7 @@ class Involved(Contract):
 class DemandCreate(Contract):
     """Dados de abertura fornecidos pelo demandante, sem permissão para escolher advogado/status."""
 
-    legal_department: str = Field(min_length=2, max_length=120)
+    requesting_department: str = Field(min_length=2, max_length=120, validation_alias=AliasChoices("requesting_department", "legal_department"))
     consult_area: str = Field(min_length=2, max_length=120)
     service_nature: str = Field(min_length=2, max_length=120)
     title: str = Field(min_length=5, max_length=180)
@@ -201,6 +201,17 @@ class DemandStore:
                   delivered_at TEXT, error_code TEXT NOT NULL DEFAULT ''
                 );
             """)
+            # Migração aditiva evita perda de dados e conserva a coluna antiga para SQLite preexistente.
+            columns = {row[1] for row in db.execute("PRAGMA table_info(bjn_demands)")}
+            if "requesting_department" not in columns:
+                db.execute("ALTER TABLE bjn_demands ADD COLUMN requesting_department TEXT")
+                db.execute("UPDATE bjn_demands SET requesting_department=legal_department")
+            db.execute("""CREATE TABLE IF NOT EXISTS bjn_document_suggestions (
+                demand_id TEXT PRIMARY KEY REFERENCES bjn_demands(id) ON DELETE CASCADE,
+                nature TEXT NOT NULL, suggestion_text TEXT NOT NULL, prompt_hash TEXT NOT NULL,
+                source_hash TEXT NOT NULL, document_count INTEGER NOT NULL,
+                warnings_json TEXT NOT NULL, created_at TEXT NOT NULL
+            )""")
 
     @staticmethod
     def _can_view(demand: sqlite3.Row, actor: Actor) -> bool:
@@ -274,6 +285,9 @@ class DemandStore:
         """Compõe cabeçalho, envolvidos, documentos e linha do tempo na mesma resposta."""
         with self._connect() as db:
             base = dict(self._require(db, demand_id, actor))
+            # Somente o conceito correto é exposto na API; coluna legado não sai do servidor.
+            base["requesting_department"] = base.get("requesting_department") or base.get("legal_department", "")
+            base.pop("legal_department", None)
             base["involved"] = [dict(r) for r in db.execute(
                 "SELECT type,name,document,period FROM bjn_involved WHERE demand_id = ? ORDER BY id", (demand_id,)
             )]
@@ -284,6 +298,11 @@ class DemandStore:
                 "SELECT event_type,description,actor_id,created_at FROM bjn_events WHERE demand_id = ? ORDER BY created_at DESC,id DESC", (demand_id,)
             )]
             guidance = db.execute("SELECT resumo,orientacao,passos_json,encaminhamento,created_at FROM bjn_ai_guidance WHERE demand_id=?", (demand_id,)).fetchone()
+            suggestion = db.execute("SELECT nature,suggestion_text,prompt_hash,source_hash,document_count,warnings_json,created_at FROM bjn_document_suggestions WHERE demand_id=?", (demand_id,)).fetchone()
+            base["document_ai_suggestion"] = ({"nature": suggestion["nature"], "text": suggestion["suggestion_text"],
+                "prompt_version": suggestion["prompt_hash"][:12], "source_version": suggestion["source_hash"][:12],
+                "documents_analyzed": suggestion["document_count"], "warnings": json.loads(suggestion["warnings_json"]),
+                "kind": "SUGESTAO_IA_NAO_VALIDADA", "created_at": suggestion["created_at"]} if suggestion else None)
             base["ai_guidance"] = ({"resumo": guidance["resumo"], "orientacao": guidance["orientacao"], "passos_sugeridos": json.loads(guidance["passos_json"]), "encaminhamento": guidance["encaminhamento"], "created_at": guidance["created_at"]} if guidance else None)
             context = db.execute("SELECT triage_type,branch,requester_email,client_name,document_mask,competence,destination_area FROM bjn_demand_context WHERE demand_id=?", (demand_id,)).fetchone()
             base["registration"] = dict(context) if context else None
@@ -313,10 +332,13 @@ class DemandStore:
                     if actor.role != "admin" and actor.user_id.find("@") > 0 and data.requester_email.strip().lower() != actor.user_id:
                         raise ServiceError("O e-mail do demandante deve coincidir com a sessão.", 403, code="REQUESTER_EMAIL_MISMATCH")
                 initial_status = "TRIAGEM_ADMINISTRATIVA" if data.triage_type and data.service_nature == "Pareceres em geral" else "RECEBIDA"
-                db.execute("INSERT INTO bjn_demands VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (
-                    demand_id, data.legal_department, data.consult_area, data.service_nature,
+                db.execute("""INSERT INTO bjn_demands
+                    (id,legal_department,consult_area,service_nature,title,description,requester_id,requester_name,
+                     lawyer_email,status,created_at,updated_at,requesting_department)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
+                    demand_id, data.requesting_department, data.consult_area, data.service_nature,
                     data.title, data.description, actor.user_id, actor.display_name,
-                    None, initial_status, now, now,
+                    None, initial_status, now, now, data.requesting_department,
                 ))
                 if data.triage_type:
                     import re
@@ -424,6 +446,23 @@ class DemandStore:
             ))
             self._event(db, demand_id, "SUGESTAO_IA", "Orientação informacional gerada com text_generator (sem decisão automática).", actor, now)
             db.execute("UPDATE bjn_demands SET updated_at=? WHERE id=?", (now, demand_id))
+        return self.get_demand(demand_id, actor)
+
+    def save_document_suggestion(self, demand_id: str, actor: Actor, suggestion: object) -> dict:
+        """Salva sugestão com hashes de origem, sem substituir parecer humano."""
+        with self._connect() as db:
+            self._require(db, demand_id, actor)
+            now = utc_now()
+            db.execute("""INSERT INTO bjn_document_suggestions
+                (demand_id,nature,suggestion_text,prompt_hash,source_hash,document_count,warnings_json,created_at)
+                VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(demand_id) DO UPDATE SET
+                nature=excluded.nature,suggestion_text=excluded.suggestion_text,prompt_hash=excluded.prompt_hash,
+                source_hash=excluded.source_hash,document_count=excluded.document_count,
+                warnings_json=excluded.warnings_json,created_at=excluded.created_at""", (
+                demand_id, suggestion.nature, suggestion.text, suggestion.prompt_hash, suggestion.source_hash,
+                suggestion.documents_analyzed, json.dumps(list(suggestion.warnings), ensure_ascii=False), now,
+            ))
+            self._event(db, demand_id, "SUGESTAO_DOCUMENTAL_IA", "Sugestão preliminar gerada a partir de anexos; revisão jurídica pendente.", actor, now)
         return self.get_demand(demand_id, actor)
 
     def resolve_with_ai(self, demand_id: str, actor: Actor) -> dict:

@@ -31,7 +31,7 @@ import {demandStatusLabels,friendlyApiError,readableDate,readableSize,selectable
     <div class="demand-metrics">
       <div class="surface demand-metric"><span>Status atual</span><strong>{{labels[demand.status]}}</strong><small>Atualizado em {{date(demand.updated_at)}}</small></div>
       <div class="surface demand-metric"><span>Advogado responsável</span><strong>{{demand.lawyer_email || 'Aguardando distribuição'}}</strong><small>{{demand.lawyer_email ? 'Responsável atribuído' : 'Ainda não distribuída'}}</small></div>
-      <div class="surface demand-metric"><span>Solicitante</span><strong>{{demand.requester_name}}</strong><small>{{demand.legal_department}}</small></div>
+      <div class="surface demand-metric"><span>Solicitante</span><strong>{{demand.requester_name}}</strong><small>{{demand.requesting_department}}</small></div>
       <div class="surface demand-metric"><span>Documentos</span><strong>{{demand.documents.length}}</strong><small>Anexos e documentos enviados</small></div>
     </div>
     @if(error()){<p class="demand-error" role="alert">{{error()}}</p>}
@@ -41,7 +41,7 @@ import {demandStatusLabels,friendlyApiError,readableDate,readableSize,selectable
     <div class="demand-detail-layout">
       <div class="demand-detail-main">
         <section class="surface demand-card" aria-labelledby="detail-resumo"><div class="demand-card-heading"><h2 id="detail-resumo">Resumo da solicitação</h2><span class="demand-subtle">Informações do cadastro</span></div>
-          <div class="demand-facts"><div><span>Área de consulta</span><strong>{{demand.consult_area}}</strong></div><div><span>Natureza do serviço</span><strong>{{demand.service_nature}}</strong></div><div><span>Departamento jurídico</span><strong>{{demand.legal_department}}</strong></div></div>
+          <div class="demand-facts"><div><span>Área de consulta</span><strong>{{demand.consult_area}}</strong></div><div><span>Natureza do serviço</span><strong>{{demand.service_nature}}</strong></div><div><span>Departamento Solicitante</span><strong>{{demand.requesting_department}}</strong></div></div>
           <div class="demand-description"><h3>Descrição da consulta</h3><p>{{demand.description}}</p></div>
         </section>
         @if(demand.registration;as registration){
@@ -74,7 +74,20 @@ import {demandStatusLabels,friendlyApiError,readableDate,readableSize,selectable
           </section>
         }
         <section class="surface demand-card demand-ai-detail" aria-labelledby="detail-ai-title">
-          <div class="demand-card-heading"><div><span class="eyebrow">ASSISTENTE BJN</span><h2 id="detail-ai-title">Sugestão da IA</h2><p>Orientação baseada exclusivamente na descrição cadastrada, sem consultar os anexos.</p></div></div>
+          <div class="demand-card-heading"><div><span class="eyebrow">ASSISTENTE BJN</span><h2 id="detail-ai-title">Sugestão da IA</h2><p>Sugestões baseadas na descrição e, quando disponíveis, nos PDFs pesquisáveis anexados.</p></div></div>
+          @if(demand.document_ai_suggestion;as suggestion){
+            <div class="demand-ai-result bjn-document-suggestion" aria-live="polite">
+              <strong>Sugestão da IA — {{suggestion.nature}} · parecer documental preliminar</strong>
+              <p class="demand-muted">{{suggestion.documents_analyzed}} documento(s) · prompt {{suggestion.prompt_version}}</p>
+              <div class="bjn-opinion-text">{{suggestion.text}}</div>
+              @for(warning of suggestion.warnings;track $index){<p class="demand-muted">{{warning}}</p>}
+              <small>Esta análise não é o parecer publicado. O advogado deverá revisar e aprovar a versão final.</small>
+            </div>
+          }
+          @if(demand.documents.length && demand.service_nature!=='Pareceres em geral'){
+            @if(!demand.document_ai_suggestion){<p class="demand-muted">Ainda não há uma sugestão documental. PDFs sem texto extraível e serviços não configurados exigem análise humana; tente reanalisar quando disponível.</p>}
+            <button type="button" class="demand-outlined" [disabled]="analyzing()||!configuration()?.ai_available" (click)="reprocessDocuments()">{{analyzing()?'Analisando documentos…':'Reanalisar documentos com IA'}}</button>
+          }
           @if(demand.ai_guidance;as guidance){
             <div class="demand-ai-result" aria-live="polite"><strong>{{guidance.encaminhamento==='POSSIVEL_AUTOATENDIMENTO'?'Possível autoatendimento':'Avaliação humana recomendada'}}</strong>
               <h3>{{guidance.resumo}}</h3><p>{{guidance.orientacao}}</p>
@@ -91,7 +104,7 @@ import {demandStatusLabels,friendlyApiError,readableDate,readableSize,selectable
                 </div>
               }
             }
-          } @else {<p class="demand-muted">Ainda não foi solicitada análise para esta demanda.</p>}
+          } @else {<p class="demand-muted">Ainda não há orientação baseada na descrição. Se houver PDFs pesquisáveis, a sugestão documental é preparada após o envio.</p>}
           @if(demand.status!=='RESOLVIDA_IA'){
             <button type="button" class="demand-outlined" [disabled]="analyzing() || !configuration()?.ai_available || sending()" (click)="analyzeDemand()">{{analyzing()?'Analisando...':(demand.ai_guidance?'Atualizar sugestão':'Gerar sugestão com IA')}}</button>
           }
@@ -277,9 +290,18 @@ export class BjnDemandDetailComponent implements OnInit,OnDestroy {
     if(this.sending()||!this.pendingFiles().length)return;this.sending.set(true);this.error.set('');
     try{const updated=await firstValueFrom(this.api.attach(this.demandId,this.pendingFiles()));this.record.set(updated);this.pendingFiles.set([]);
       this.documentTab.set('ALL');
+      if(updated.document_analysis_error)this.aiError.set(updated.document_analysis_error);
       const recent=updated.documents.at(-1);
       if(recent)void this.preview(recent);}
     catch(error){this.error.set(friendlyApiError(error));}finally{this.sending.set(false);}
+  }
+  /** Permite refazer a análise dos documentos já protegidos pelo protocolo. */
+  async reprocessDocuments():Promise<void>{
+    if(this.analyzing() || !this.record())return;
+    this.analyzing.set(true);this.aiError.set('');
+    try{this.record.set(await firstValueFrom(this.api.analyzeAttachedDocuments(this.demandId)));}
+    catch(cause){this.aiError.set(friendlyApiError(cause));}
+    finally{this.analyzing.set(false);}
   }
   /** Solicitação explícita para text_generator, registrada no histórico da demanda. */
   async analyzeDemand():Promise<void>{
