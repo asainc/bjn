@@ -21,7 +21,7 @@ def fake_app(directory: Path, ai_enabled: bool = True, demos: bool = False):
     settings = Settings(
         environment="local", bjn_database_path=directory / "db.sqlite3",
         bjn_upload_directory=directory / "files", bjn_demo_lawyers_enabled=demos,
-        bradesco_text_model="MODEL_TEST" if ai_enabled else "",
+        bradesco_text_model="MODEL_TEST" if ai_enabled else "", bradesco_identificador="test-id", bradesco_senha="test-password",
     )
     app = create_app(settings)
     return app

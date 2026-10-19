@@ -36,9 +36,13 @@ def main() -> int:
         settings.bradesco_identificador.get_secret_value().strip()
         and settings.bradesco_senha.get_secret_value().strip()
     )
+    client = BradescoBridgeClient(settings)
+    status = client.text_generator_status()
     diagnostic = {
         "ambiente": settings.bradesco_environment,
-        "modelo": settings.bradesco_text_model,
+        "arquivo_env_encontrado": Path(os.getenv("APP_ENV_FILE", ROOT / ".env")).is_file(),
+        "modelo_configurado": bool(settings.bradesco_text_model.strip()),
+        "codigo_configuracao": status["code"],
         "autenticacao_configurada": token_present or credentials_present,
         "modo_autenticacao": "token" if token_present else "identificador_senha" if credentials_present else "ausente",
         "ca_corporativa_configurada": bool(settings.bradesco_ca_bundle),
@@ -49,17 +53,25 @@ def main() -> int:
         "timeout_segundos": settings.bradesco_timeout_seconds,
     }
 
-    if not settings.bradesco_text_model.strip():
+    # --check-only nunca estabelece conexão nem envia dados para a Bridge.
+    # Use o modo completo exclusivamente em ambiente corporativo autorizado.
+    if not client.configured:
         diagnostic.update({
             "ok": False,
             "etapa": "configuracao_local",
-            "codigo": "bradesco_modelo_ausente",
-            "mensagem": "Defina BRADESCO_TEXT_MODEL antes de testar a conexão.",
+            "codigo": status["code"],
+            "mensagem": status["message"],
         })
         print(json.dumps(diagnostic, ensure_ascii=False, indent=2))
         return 2
-
-    client = BradescoBridgeClient(settings)
+    if "--check-only" in sys.argv[1:]:
+        diagnostic.update({
+            "ok": True,
+            "etapa": "configuracao_local",
+            "mensagem": "Variáveis obrigatórias carregadas pelo backend. Autenticação e acesso ao deployment não foram testados.",
+        })
+        print(json.dumps(diagnostic, ensure_ascii=False, indent=2))
+        return 0
     try:
         response = client.generate_text(
             "Responda apenas com a palavra OK. Esta é uma mensagem sintética de diagnóstico sem dados pessoais.",

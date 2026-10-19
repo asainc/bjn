@@ -60,10 +60,36 @@ class BradescoBridgeClient:
         self.settings = settings
         self._module: Any | None = None
 
+    def text_generator_status(self) -> dict[str, str]:
+        """Diagnostica pré-requisitos sem executar rede ou expor segredos.
+
+        O status descreve somente a configuração carregada pelo backend;
+        a disponibilidade real do deployment exige uma chamada de teste.
+        """
+        if not self.settings.bradesco_text_model.strip():
+            return {
+                "code": "TEXT_MODEL_MISSING",
+                "message": "Falta BRADESCO_TEXT_MODEL no backend. Identificador, senha e código do agente Q&A não definem o modelo de text_generator. Configure o deployment autorizado no .env da raiz e reinicie a API.",
+            }
+        has_token = bool(self.settings.bradesco_authorization_token.get_secret_value().strip())
+        has_credentials = bool(
+            self.settings.bradesco_identificador.get_secret_value().strip()
+            and self.settings.bradesco_senha.get_secret_value().strip()
+        )
+        if not (has_token or has_credentials):
+            return {
+                "code": "BRIDGE_CREDENTIALS_MISSING",
+                "message": "O modelo está definido, mas faltam credenciais carregadas pelo backend. Configure BRADESCO_AUTHORIZATION_TOKEN ou BRADESCO_IDENTIFICADOR e BRADESCO_SENHA no .env da raiz e reinicie a API.",
+            }
+        return {
+            "code": "CONFIGURED_NOT_TESTED",
+            "message": "Configuração local presente. A conexão com a Bridge será validada ao analisar um documento; estar configurado não garante acesso ao deployment.",
+        }
+
     @property
     def configured(self) -> bool:
-        """Indica se a análise documental possui deployment de geração configurado."""
-        return bool(self.settings.bradesco_text_model.strip())
+        """Habilita IA somente quando modelo e autenticação estão presentes."""
+        return self.text_generator_status()["code"] == "CONFIGURED_NOT_TESTED"
 
     @property
     def qa_configured(self) -> bool:

@@ -69,7 +69,7 @@ def test_upload_gera_sugestao_sem_publicar_e_usa_departamento_solicitante() -> N
     """A prévia não cria protocolo; o registro grava sugestão, não parecer definitivo."""
     with TemporaryDirectory() as directory:
         root = Path(directory)
-        app = create_app(Settings(environment="local", bradesco_text_model="fake-text-model",
+        app = create_app(Settings(environment="local", bradesco_text_model="fake-text-model", bradesco_identificador="test-id", bradesco_senha="test-password",
                 bjn_database_path=root / "bjn.db", bjn_upload_directory=root / "uploads"))
         fake = BridgeFake()
         app.state.bjn_document_opinion = BjnDocumentOpinionService(fake)

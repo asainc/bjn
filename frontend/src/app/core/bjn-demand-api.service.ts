@@ -48,6 +48,7 @@ export type DemandConfiguration = {
   actor:{name:string;role:string;email:string}; allowed_lawyers:string[];lawyer_options:LawyerOption[];ai_available:boolean;
   max_file_size_mb:number; max_files:number; accepted_formats:string[];
   available_natures:string[];opinion_ai_available:boolean;demo_session_available:boolean;
+  ai_configuration?:{code:string;message:string};
 };
 
 @Injectable({providedIn:'root'})

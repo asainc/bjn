@@ -63,7 +63,7 @@ import {demandStatusLabels,friendlyApiError,readableDate,readableSize,selectable
           <section class="surface demand-card bjn-opinion-editor" aria-labelledby="opinion-editor-title"><span class="eyebrow">EXCLUSIVO DO ADVOGADO RESPONSÁVEL</span><h2 id="opinion-editor-title">Elaboração e validação do parecer</h2>
             <p>A IA pode sugerir um rascunho, mas somente você pode revisar, ajustar e publicar o parecer.</p>
             <button type="button" class="demand-outlined" (click)="generateDraft()" [disabled]="generatingOpinion() || !configuration()?.opinion_ai_available">{{generatingOpinion()?'Preparando rascunho...':'Preparar rascunho com text_generator'}}</button>
-            @if(!configuration()?.opinion_ai_available){<p class="demand-muted">IA indisponível. O parecer ainda pode ser escrito manualmente.</p>}
+            @if(configuration() && !configuration()?.opinion_ai_available){<p class="demand-muted">{{configuration()?.ai_configuration?.message || 'IA indisponível.'}} O parecer ainda pode ser escrito manualmente.</p>}
             <div class="demand-field"><label for="opinion-text">Texto final do parecer <span class="required">*</span></label><textarea id="opinion-text" class="bjn-opinion-input" rows="12" maxlength="18000" [(ngModel)]="finalOpinion" placeholder="Revise a proposta de IA ou redija o parecer completo"></textarea></div>
             <label class="bjn-confirm"><input type="checkbox" [(ngModel)]="humanReviewed"/> Li e revisei integralmente o parecer; assumo sua publicação como advogado responsável.</label>
             @if(opinionError()){<p class="demand-error" role="alert">{{opinionError()}}</p>}
@@ -108,7 +108,7 @@ import {demandStatusLabels,friendlyApiError,readableDate,readableSize,selectable
           @if(demand.status!=='RESOLVIDA_IA'){
             <button type="button" class="demand-outlined" [disabled]="analyzing() || !configuration()?.ai_available || sending()" (click)="analyzeDemand()">{{analyzing()?'Analisando...':(demand.ai_guidance?'Atualizar sugestão':'Gerar sugestão com IA')}}</button>
           }
-          @if(!configuration()?.ai_available){<p class="demand-muted">Serviço corporativo text_generator não configurado.</p>}
+          @if(configuration() && !configuration()?.ai_available){<p class="demand-muted" role="status">{{configuration()?.ai_configuration?.message || 'Serviço corporativo indisponível.'}}</p>}
           @if(aiError()){<p class="demand-error" role="alert">{{aiError()}}</p>}
         </section>
         @if(demand.involved.length){<section class="surface demand-card" aria-labelledby="detail-env"><div class="demand-card-heading"><h2 id="detail-env">Envolvidos</h2><span class="demand-subtle">{{demand.involved.length}} registro(s)</span></div>

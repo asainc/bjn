@@ -80,6 +80,8 @@ def demand_configuration(request: Request) -> dict:
         "allowed_lawyers": store_from(request).allowed_lawyers if actor.role == "admin" else [],
         "lawyer_options": [{"email": e, "name": DEMO_LAWYERS.get(e, e) if e in request.app.state.bjn_demo_lawyers else e, "demo": e in request.app.state.bjn_demo_lawyers} for e in store_from(request).allowed_lawyers] if actor.role == "admin" else [],
         "ai_available": request.app.state.bjn_demand_ai.available,
+        # Estado seguro para esclarecer o que falta sem enviar token, senha ou identificador.
+        "ai_configuration": request.app.state.bridge.text_generator_status(),
         "opinion_ai_available": request.app.state.bjn_opinion_ai.bridge.configured,
         # Disponível somente na máquina de desenvolvimento e com perfis fictícios habilitados.
         "demo_session_available": request.app.state.settings.environment == "local" and bool(request.app.state.bjn_demo_lawyers),

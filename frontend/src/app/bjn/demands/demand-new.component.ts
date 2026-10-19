@@ -100,7 +100,7 @@ type ValidationIssue = {fieldId:string; message:string};
                 <button type="button" class="demand-outlined" [disabled]="analyzing() || form.description.trim().length<15 || !configuration()?.ai_available" (click)="analyzeDescription()">{{analyzing()?'Analisando...':'Analisar descrição'}}</button>
               </div>
               <p class="demand-muted">A descrição pode ser analisada separadamente. Ao selecionar um PDF pesquisável, a IA também o analisa com o prompt da natureza escolhida. A sugestão não aciona nem substitui advogado.</p>
-              @if(!configuration()?.ai_available){<p class="demand-muted">Análise indisponível neste ambiente. O cadastro continua funcionando normalmente.</p>}
+              @if(configuration() && !configuration()?.ai_available){<p class="demand-muted" role="status">{{configuration()?.ai_configuration?.message || 'Análise indisponível neste ambiente. O cadastro continua funcionando normalmente.'}}</p>}
               @if(analyzingDocument()){<p class="demand-muted" role="status">Analisando automaticamente o conteúdo dos anexos com o prompt de {{form.service_nature}}…</p>}
               @if(documentAnalysisError()){<p class="demand-error" role="alert">{{documentAnalysisError()}}</p>}
               @if(files().length && form.service_nature && form.service_nature!=='Pareceres em geral'){
@@ -249,7 +249,14 @@ export class BjnDemandNewComponent implements OnInit {
     const pdfs=this.files().filter(file=>file.type==='application/pdf').slice(0,4);
     if(!nature||nature==='Pareceres em geral'||!this.files().length){this.analyzingDocument.set(false);return;}
     if(!pdfs.length){this.analyzingDocument.set(false);this.documentAnalysisError.set('Análise automática disponível para PDF pesquisável. Imagens serão preservadas para avaliação humana.');return;}
-    if(!this.configuration()?.ai_available){this.analyzingDocument.set(false);this.documentAnalysisError.set('O text_generator não está configurado. É possível cadastrar a demanda normalmente.');return;}
+    // Quando a configuração ainda está sendo consultada, a análise será iniciada
+    // por loadActor assim que a API confirmar o estado. Não presumimos falha.
+    if(!this.configuration()){this.analyzingDocument.set(false);return;}
+    if(!this.configuration()?.ai_available){
+      this.analyzingDocument.set(false);
+      this.documentAnalysisError.set(this.configuration()?.ai_configuration?.message || 'Análise corporativa indisponível. É possível cadastrar a demanda normalmente.');
+      return;
+    }
     this.analyzingDocument.set(true);
     try{
       const result=await firstValueFrom(this.api.analyzeUploadedDocuments(nature,this.form.description,pdfs));
@@ -320,8 +327,11 @@ export class BjnDemandNewComponent implements OnInit {
       // A sessão determina o endereço inicial. O servidor verifica sua correspondência.
       this.form.requester_email=this.configuration()?.actor?.email || '';
       this.error.set('');
+      // Analisa anexos já selecionados durante o carregamento da sessão.
+      if(this.files().length && this.form.service_nature)void this.analyzeSelectedDocuments();
     } catch(cause){
       this.configuration.set(null);
+      this.analyzingDocument.set(false);
       this.error.set(`Não foi possível validar a sessão: ${friendlyApiError(cause)}`);
     }
   }

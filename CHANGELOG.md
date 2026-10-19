@@ -95,3 +95,11 @@
 - Rascunho de IA não é publicado automaticamente; advogado responsável continua revisor e publicador.
 - Bridge e agente Q&A configuráveis somente pelo `.env` ou injeção externa de segredos; sem credenciais incluídas.
 - Rotas com reanálise autorizada e fallbacks explícitos para arquivos sem camada textual.
+
+## 2026-10-19 — Diagnóstico do text_generator no BJN
+
+- Distingue deployment ausente, credenciais ausentes e configuração local presente sem afirmar que a Bridge está disponível.
+- A interface aguarda a configuração da API antes de decidir sobre disponibilidade e reprocessa PDFs escolhidos durante o carregamento.
+- O endpoint de configuração expõe apenas código e mensagem de diagnóstico, nunca segredos.
+- Acrescentado diagnóstico sem rede (`scripts/test_text_generator_connection.py --check-only`) e testes automatizados com dados sintéticos.
+- Registro da decisão: autenticação e workflow Q&A não substituem o parâmetro obrigatório `BRADESCO_TEXT_MODEL`. Ver `docs/BJN_CORRECAO_CONFIG_TEXT_GENERATOR.md`.
